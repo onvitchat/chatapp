@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "611151918238",
+    "firebase_url": "https://kcha-d1194.firebaseio.com",
+    "project_id": "kcha-d1194",
+    "storage_bucket": "kcha-d1194.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:611151918238:android:18e202d645e15f660df78f",
+        "android_client_info": {
+          "package_name": "com.onvit.chatapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "611151918238-0f69m5jmpmmuhe4jgumsh2j4lt8d7qvf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.onvit.chatapp",
+            "certificate_hash": "45b0906ce1373aa8fb3d855aa0b86b3e2ca1f000"
+          }
+        },
+        {
+          "client_id": "611151918238-l1a867pogjfp8tmq2q3r49p7ql1pqm1f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCurunZZoCvfVczlp71SIKNxnvi-awudnw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "611151918238-l1a867pogjfp8tmq2q3r49p7ql1pqm1f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

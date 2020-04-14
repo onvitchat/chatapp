@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.onvit.chatapp">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <meta-data
+        android:name="com.google.firebase.messaging.default_notification_icon"
+        android:resource="@mipmap/ic_kcha" />
+
+    <meta-data
+        android:name="com.google.firebase.messaging.default_notification_color"
+        android:resource="@color/colorAccent" />
+    <meta-data
+        android:name="com.google.firebase.messaging.default_notification_channel_id"
+        android:value="@string/vibrate" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_kcha"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_kcha_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme.StatusBar"
+        android:usesCleartextTraffic="true">
+        <!-- api28? 부터 http주소에 접근하려면 이거 해줘야됨. -->
+        <activity android:name=".chat.ViewAllActivity"></activity>
+        <activity
+            android:name=".chat.SelectPeopleActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteRegistrationActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteListActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteDetailActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.ImgActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".admin.InviteActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.FileActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.ChatSetInfoActivity"
+            android:theme="@style/Theme.PopUp" />
+        <activity
+            android:name=".admin.AdminActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".notice.NoticeActivity2"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".notice.NoticeActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".certification.CertificateActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ad.ADActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.BigPictureActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".contact.PersonInfoActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.StatusBar" />
+        <activity
+            android:name=".chat.SelectGroupChatActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.GroupMessageActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.chatStatusBar"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.StatusBar"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="GroupMessage" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".SignUpActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".LoginActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".SplashActivity"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".fcm.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.onvit.chatapp.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+
+</manifest>

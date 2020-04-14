@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@color/white">
+
+    <include
+        android:id="@+id/chat_toolbar"
+        layout="@layout/app_bar_layout"/>
+    <LinearLayout
+        android:id="@+id/no_vote_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_below="@id/chat_toolbar"
+        android:visibility="gone">
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/vote"
+            android:layout_marginBottom="20dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="진행중인 투표가 없습니다."
+            android:textSize="25dp"
+            android:layout_marginBottom="50dp"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/vote_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/chat_toolbar"/>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:fabSize="normal"
+        android:id="@+id/plus_vote"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="10dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:backgroundTint="#FF00DD"
+        android:src="@drawable/ic_create_black_24dp"/>
+</RelativeLayout>

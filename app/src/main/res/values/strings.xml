@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">대한지역병원협의회</string>
+    <string name="vibrate">vibrate</string>
+    <string name="noVibrate">noVibrate</string>
+    <string name="selfcerti_url">https://222.235.160.66:8443/kmcis/kmcis_web_sample_step01.jsp</string>
+    <string name="MaxCount">99</string>
+    <string name="vibrate2">vibrate2</string>
+</resources>

@@ -1,0 +1,54 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.StatusBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">#ffffff</item>
+        <!--Status Bar 글자색깔-->
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+    </style>
+
+    <style name="AppTheme.chatStatusBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">#DBE1EF</item>
+        <!--Status Bar 글자색깔-->
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+    </style>
+
+    <style name="AppTheme.actionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+    <!-- set the size of action bar title . -->
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="AppTheme.pictureActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- set the size of action bar title . -->
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <style name="BottomNavigationView" parent="@style/TextAppearance.AppCompat.Caption">
+        <item name="android:textSize">18dp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="BottomNavigationView.Active" parent="@style/TextAppearance.AppCompat.Caption">
+        <item name="android:textSize">15dp</item>
+    </style>
+    <style name="Theme.PopUp" parent="Theme.AppCompat.DayNight.Dialog.Alert">
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+
+</resources>

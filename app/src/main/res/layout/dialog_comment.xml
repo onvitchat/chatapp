@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+<ImageView
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:src="@drawable/kcha_logo"
+    android:scaleType="fitXY"/>
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:hint="상태 메세지를 입력하세요"
+        android:id="@+id/comment_dialog_edittext"/>
+</LinearLayout>

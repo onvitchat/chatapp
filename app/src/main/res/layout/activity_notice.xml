@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    tools:context=".notice.NoticeActivity">
+
+    <include
+        android:id="@+id/notice_toolbar"
+        layout="@layout/app_bar_layout" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.2"
+            android:gravity="center"
+            android:text="제목"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:textSize="25dp"/>
+        <EditText
+            android:id="@+id/edit_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:maxLines="1"
+            android:hint="제목을 입력하세요."
+            android:inputType="text"
+            android:textSize="20dp" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/layout_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+        <Button
+            android:id="@+id/insert_img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_insert_photo_black_24dp"
+            android:background="?attr/selectableItemBackground"
+            android:textSize="17dp"
+            android:padding="3dp"
+            android:layout_marginEnd="10dp"
+            android:text="이미지첨부"/>
+        <Button
+            android:id="@+id/insert_notice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_edit_black_24dp"
+            android:background="?attr/selectableItemBackground"
+            android:textSize="17dp"
+            android:layout_marginEnd="5dp"
+            android:padding="3dp"
+            android:text="등록완료"/>
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/layout_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginBottom="5dp"
+        android:gravity="end"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/writer"
+            android:layout_width="0dp"
+            android:layout_weight="0.6"
+            android:hint="작성자 : ㅇㅇ"
+            android:textSize="18dp"
+            android:textColor="#353535"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_time"
+            android:layout_width="0dp"
+            android:layout_weight="0.4"
+            android:gravity="end"
+            android:layout_height="wrap_content"
+            android:hint="2020년 1월 09일"
+            android:textSize="18dp"
+            android:textColor="#353535" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <EditText
+            android:id="@+id/edit_content"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.7"
+            android:background="@drawable/edit_border"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp"
+            android:gravity="top"
+            android:padding="10dp"
+            android:scrollHorizontally="false"
+            android:textSize="18dp"
+            android:hint="내용을 입력하세요."/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/notice_recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.3"
+            android:visibility="gone"/>
+    </LinearLayout>
+</LinearLayout>
