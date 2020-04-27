@@ -28,7 +28,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="0.8"
-            android:maxLines="1"
             android:hint="제목을 입력하세요."
             android:inputType="text"
             android:textSize="20dp" />
@@ -88,29 +87,31 @@
             android:textSize="18dp"
             android:textColor="#353535" />
     </LinearLayout>
-
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-        <EditText
-            android:id="@+id/edit_content"
+        android:layout_height="match_parent">
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="0.7"
-            android:background="@drawable/edit_border"
-            android:layout_marginStart="3dp"
-            android:layout_marginEnd="3dp"
-            android:gravity="top"
-            android:padding="10dp"
-            android:scrollHorizontally="false"
-            android:textSize="18dp"
-            android:hint="내용을 입력하세요."/>
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/notice_recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="0.3"
-            android:visibility="gone"/>
-    </LinearLayout>
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <EditText
+                android:id="@+id/edit_content"
+                android:layout_width="match_parent"
+                android:layout_height="450dp"
+                android:background="@drawable/edit_border"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
+                android:gravity="top"
+                android:padding="10dp"
+                android:scrollHorizontally="false"
+                android:textSize="18dp"
+                android:hint="내용을 입력하세요."/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/notice_recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </ScrollView>
+
 </LinearLayout>

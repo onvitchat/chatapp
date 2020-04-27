@@ -44,6 +44,7 @@ import com.onvit.chatapp.util.Utiles;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -82,7 +83,10 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
         messageReadUsers = (Map<String, Object>) getIntent().getSerializableExtra("readUser");
         existUserGroupChat = (Map<String, Object>) getIntent().getSerializableExtra("existUser");
         users = UserMap.getInstance();
+        User myInfo = users.get(uid);
 
+        Collections.sort(userList);
+        userList.add(0, myInfo);
 
         WindowManager.LayoutParams wmlp = getWindow().getAttributes();
         wmlp.gravity = Gravity.TOP | Gravity.END;

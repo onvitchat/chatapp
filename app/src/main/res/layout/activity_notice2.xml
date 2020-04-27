@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginStart="10dp"
     android:background="#FFFFFF"
     android:orientation="vertical"
     tools:context=".notice.NoticeActivity2">
@@ -19,6 +18,7 @@
         android:layout_marginStart="10dp"
         android:layout_marginBottom="10dp"
         android:textColor="@color/black"
+        android:background="#FFFFFFFF"
         android:textSize="25dp"
         android:textStyle="bold"
         tools:text="공지사항 제목" />
@@ -27,6 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
+        android:layout_marginStart="10dp"
         android:orientation="horizontal">
 
         <ImageView
@@ -106,29 +107,32 @@
         android:layout_marginBottom="13dp"
         android:background="@color/colorGray" />
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <EditText
-            android:id="@+id/edit_content"
+        android:background="#FFFFFFFF">
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginStart="3dp"
-            android:layout_marginEnd="3dp"
-            android:layout_weight="0.7"
-            android:background="@drawable/edit_border2"
-            android:gravity="top"
-            android:padding="10dp"
-            android:scrollHorizontally="false"
-            android:textSize="18dp" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/notice_recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="0.3"
-            android:visibility="gone" />
-    </LinearLayout>
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <EditText
+                android:id="@+id/edit_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/edit_border2"
+                android:gravity="top"
+                android:padding="10dp"
+                android:scrollHorizontally="false"
+                android:textSize="18dp" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/notice_recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFFFF"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

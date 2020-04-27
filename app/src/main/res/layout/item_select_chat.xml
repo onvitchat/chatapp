@@ -11,9 +11,11 @@
 
     <ImageView
         android:id="@+id/chatitem_imageview"
-        android:layout_width="80dp"
-        android:layout_height="60dp"
+        android:layout_width="0dp"
+        android:layout_height="70dp"
+        android:layout_gravity="center_vertical"
         android:layout_margin="10dp"
+        android:layout_weight="0.2"
         android:src="@drawable/kcha_logo" />
 
     <RelativeLayout
@@ -23,35 +25,48 @@
         android:gravity="center_vertical"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/chatitem_textview_title"
+        <LinearLayout
+            android:id="@+id/item_title_count"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxWidth="150dp"
-            android:maxLines="1"
-            android:textColor="@color/black"
-            android:textSize="24dp"
-            android:textStyle="bold"
-            tools:text="방 이름" />
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginEnd="10dp"
+            android:layout_toStartOf="@id/chatitem_textview_timestamp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/user_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:layout_toEndOf="@+id/chatitem_textview_title"
-            android:textColor="@android:color/darker_gray"
-            android:textSize="24dp"
-            android:textStyle="bold"
-            tools:text="숫자" />
+            <TextView
+                android:id="@+id/chatitem_textview_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxWidth="150dp"
+                android:maxLines="1"
+                android:textColor="@color/black"
+                android:textSize="24dp"
+                android:textStyle="bold"
+                tools:text="방 이름" />
+
+            <TextView
+                android:id="@+id/user_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="24dp"
+                android:textStyle="bold"
+                tools:text="숫자" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/chatitem_textview_lastMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/chatitem_textview_title"
+            android:layout_below="@+id/item_title_count"
             android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="15dp"
             android:layout_toStartOf="@+id/chatitem_textview_timestamp"
             android:ellipsize="end"
             android:maxLines="2"
@@ -87,8 +102,8 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/chatitem_textview_timestamp2"
             android:layout_alignParentRight="true"
-            android:layout_marginTop="5dp"
-            android:layout_marginRight="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="10dp"
             android:background="@drawable/textview_radius"
             android:textColor="@android:color/white"
             android:textStyle="bold"

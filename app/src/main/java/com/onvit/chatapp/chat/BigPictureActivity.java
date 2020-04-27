@@ -302,4 +302,17 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
                 break;
         }
     }
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putInt("position", position);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        position = savedInstanceState.getInt("position");
+        String uri = list.get(position);
+        drawImg(uri,namelist.get(position));
+    }
 }

@@ -101,6 +101,27 @@ public class LoginActivity extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                FirebaseAuth auth = FirebaseAuth.getInstance();
+//                auth.sendPasswordResetEmail("radhmy@hanmail.net").addOnCompleteListener(new OnCompleteListener<Void>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<Void> task) {
+//
+//                        AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+//                        builder.setTitle("메일 발송");
+//                        builder.setMessage("가입하신 이메일(radhmy@hanmail.net)로 메일을 발송하였습니다.\n 비밀번호를 재설정 후 이용해주세요.");
+//                        builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+//                            @Override
+//                            public void onClick(DialogInterface dialogInterface, int i) {
+//                                finish();
+//                            }
+//                        });
+//                        AlertDialog dialog = builder.create();
+//                        dialog.setCanceledOnTouchOutside(false);
+//                        dialog.setCancelable(false);
+//                        dialog.show();
+//                    }
+//                });
+
                 Intent intent = new Intent(LoginActivity.this, CertificateActivity.class);
                 intent.putExtra("search", "search");
                 startActivity(intent);
@@ -232,6 +253,7 @@ public class LoginActivity extends AppCompatActivity {
                     ActivityCompat.requestPermissions(LoginActivity.this, strArray, PERMISSION_REQUEST_CODE);
                 }
             });
+
         }
     }
 

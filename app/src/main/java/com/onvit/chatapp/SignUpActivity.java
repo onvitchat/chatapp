@@ -287,7 +287,7 @@ public class SignUpActivity extends AppCompatActivity {
         modifyUser.setPushToken(user.getPushToken());
         modifyUser.setTel(tel.getText().toString());
         modifyUser.setUid(user.getUid());
-        modifyUser.setUserEmail(user.getUserEmail());
+        modifyUser.setUserEmail(email.getText().toString());
         modifyUser.setUserName(name.getText().toString());
         modifyUser.setUserProfileImageUrl(imageUri);
         modifyUser.setGrade(grade.getText().toString());

@@ -1,10 +1,8 @@
 package com.onvit.chatapp.chat;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -13,18 +11,14 @@ import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -44,12 +38,14 @@ import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SelectPeopleActivity extends AppCompatActivity {
     List<User> userlist;
@@ -60,11 +56,11 @@ public class SelectPeopleActivity extends AppCompatActivity {
     private PeopleFragmentRecyclerAdapter pf = new PeopleFragmentRecyclerAdapter();
     private PlusPeopleRecyclerAdapter plusPeopleRecyclerAdapter;
     private String uid;
-    private List<User> pList = new ArrayList<>();
+    private ArrayList<User> pList = new ArrayList<>();
     private Button b;
     private EditText e;
     private DatabaseReference databaseReference;
-    private Map<String, User> users = new HashMap<>();
+    private Map<String, User> allUsers = new HashMap<>();
     private String toRoom;
     private RecyclerView plusRecyclerView;
     private ImageView back_arrow;
@@ -89,7 +85,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
         databaseReference = FirebaseDatabase.getInstance().getReference();
         b = findViewById(R.id.create_chat);
         e = findViewById(R.id.chat_name);
-        users = UserMap.getInstance();
+        allUsers = UserMap.getInstance();
         if (getIntent().getStringExtra("plus") == null) {
             messageReadUsers.clear();
             existUserGroupChat.clear();
@@ -124,7 +120,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             if (count.size() > 0) {
                                 c = count.get(count.size() - 1) + 1;
                             }
-                            pList.add(users.get(uid));
+                            pList.add(allUsers.get(uid));
                             ChatModel chatModel = new ChatModel();
                             LastChat lastChat = new LastChat();
                             lastChat.setChatName(chatName);
@@ -143,7 +139,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             chatModel.id = c;
                             lastChat.setExistUsers(existUser);
                             lastChat.setUsers(users);
-
+                            pList.remove(allUsers.get(uid));
                             databaseReference.child("groupChat").child(chatName).setValue(chatModel);
                             databaseReference.child("lastChat").child(chatName).setValue(lastChat).addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
@@ -151,13 +147,6 @@ public class SelectPeopleActivity extends AppCompatActivity {
                                     List<ChatModel.Comment> newComments = new ArrayList<>();
                                     List<Img> img_list = new ArrayList<>();
                                     Utiles.customToast(SelectPeopleActivity.this, "채팅방을 생성하였습니다.").show();
-                                    Intent intent = new Intent(SelectPeopleActivity.this, GroupMessageActivity.class);
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                    intent.putExtra("toRoom", chatName); // 방이름
-                                    intent.putExtra("chatCount", 0);// 채팅숫자
-                                    UserMap.getComments().clear();
-                                    intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
-                                    ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectPeopleActivity.this, R.anim.frombottom, R.anim.totop);
 
                                     ChatModel.Comment comment = new ChatModel.Comment();
                                     comment.uid = uid;
@@ -167,6 +156,23 @@ public class SelectPeopleActivity extends AppCompatActivity {
                                     comment.readUsers = messageReadUsers;
                                     comment.existUser = existUserGroupChat;
                                     databaseReference.child("groupChat").child(chatName).child("comments").push().setValue(comment);
+                                    Set<String> keySet = messageReadUsers.keySet();
+                                    for(String key : keySet){
+                                        if(!key.equals(uid)){
+                                            messageReadUsers.put(key, false);
+                                        }
+                                    }
+                                    Intent intent = new Intent(SelectPeopleActivity.this, GroupMessageActivity.class);
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                    intent.putExtra("toRoom", chatName); // 방이름
+                                    intent.putExtra("chatCount", 0);// 채팅숫자
+                                    intent.putParcelableArrayListExtra("userInfo", pList);
+                                    intent.putExtra("readUser", (Serializable) messageReadUsers);
+                                    intent.putExtra("existUser", (Serializable) existUserGroupChat);
+                                    UserMap.getComments().clear();
+                                    intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
+                                    ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectPeopleActivity.this, R.anim.frombottom, R.anim.totop);
+
                                     startActivity(intent, activityOptions.toBundle());
                                     finish();
                                 }
@@ -208,8 +214,8 @@ public class SelectPeopleActivity extends AppCompatActivity {
                         return;
                     }
                     String message = "";
-                    if (users.get(uid) != null) {
-                        message = String.format("%s(%s)님이 ", users.get(uid).getUserName(), users.get(uid).getHospital());
+                    if (allUsers.get(uid) != null) {
+                        message = String.format("%s(%s)님이 ", allUsers.get(uid).getUserName(), allUsers.get(uid).getHospital());
                     }
                     Map<String, Object> map = new HashMap<>();
                     Map<String, Object> map2 = new HashMap<>();

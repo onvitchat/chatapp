@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.Settings;
 import android.util.Log;
@@ -42,7 +43,6 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.onvit.chatapp.ad.ShoppingFragment;
 import com.onvit.chatapp.admin.AdminActivity;
-import com.onvit.chatapp.admin.InviteActivity;
 import com.onvit.chatapp.admin.SetupFragment;
 import com.onvit.chatapp.chat.ChatFragment;
 import com.onvit.chatapp.chat.GroupMessageActivity;
@@ -57,6 +57,8 @@ import com.onvit.chatapp.util.PreferenceManager;
 import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
+import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
     private List<ChatModel.Comment> newComments = new ArrayList<>();
     private List<Img> img_list = new ArrayList<>();
     private AlertDialog dialog;
+    private ArrayList<User> userInfoList = new ArrayList<>();
+    private Map<String, Object> messageReadUsers = new HashMap<>();
+    private Map<String, Object> existUserGroupChat = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,7 +157,32 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationMenuView = (BottomNavigationMenuView) bottomNavigationView.getChildAt(0);
         requestPermission();
         passPushTokenToServer();
+        deleteFile();
 
+    }
+
+    private void deleteFile() {
+        File path = Environment.getExternalStorageDirectory();
+        File dir = new File(path + "/KCHA");
+        if (dir.exists()) {
+            String p = dir.getAbsolutePath();
+            setDirEmpty(p);
+        }
+    }
+
+    public void setDirEmpty(String dirName) {
+        File dir = new File(dirName);
+        File[] childFileList = dir.listFiles();
+        if (dir.exists()) {
+            for (File childFile : childFileList) {
+                if (childFile.isDirectory()) {
+                    setDirEmpty(childFile.getAbsolutePath()); //하위 디렉토리
+                } else {
+                    childFile.delete(); //하위 파일
+                }
+            }
+            dir.delete();
+        }
     }
 
     private void requestPermission() {
@@ -371,27 +401,9 @@ public class MainActivity extends AppCompatActivity {
         } else if (item.getItemId() == R.id.admin) {
             Intent intent = new Intent(MainActivity.this, AdminActivity.class);
             startActivity(intent);
-        } else if (item.getItemId() == R.id.invite) {
-            Intent intent = new Intent(MainActivity.this, InviteActivity.class);
-            startActivity(intent);
         }
 
         return true;
-    }
-
-    private void goChatRoom(String toRoom) {
-        Intent intent = null;
-        intent = new Intent(MainActivity.this, GroupMessageActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("toRoom", toRoom); // 방이름
-        intent.putExtra("chatCount", newComments.size());// 채팅숫자
-        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
-        UserMap.setComments(newComments);
-        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(MainActivity.this, R.anim.frombottom, R.anim.totop);
-        getIntent().removeExtra("tag");
-        dialog.dismiss();
-        startActivity(intent, activityOptions.toBundle());
-
     }
 
     @Override
@@ -432,6 +444,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void getMessage(final String room) {
+        databaseReference.child("groupChat").child(room).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                userInfoList.clear();
+                messageReadUsers.clear();
+                existUserGroupChat.clear();
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                    messageReadUsers.put(item.getKey(), item.getValue());
+                    existUserGroupChat.put(item.getKey(), true);
+                    if (!item.getKey().equals(uid)) {
+                        userInfoList.add(userMap.get(item.getKey()));
+                    }
+                }
+                messageReadUsers.put(uid, true);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
         databaseReference.child("groupChat").child(room).child("comments").orderByChild("readUsers/" + uid).equalTo(false)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -492,5 +525,23 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+    }
+
+    private void goChatRoom(String toRoom) {
+        Intent intent = null;
+        intent = new Intent(MainActivity.this, GroupMessageActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("toRoom", toRoom); // 방이름
+        intent.putExtra("chatCount", newComments.size());// 채팅숫자
+        intent.putParcelableArrayListExtra("userInfo", userInfoList);
+        intent.putExtra("readUser", (Serializable) messageReadUsers);
+        intent.putExtra("existUser", (Serializable) existUserGroupChat);
+        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
+        UserMap.setComments(newComments);
+        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(MainActivity.this, R.anim.frombottom, R.anim.totop);
+        getIntent().removeExtra("tag");
+        dialog.dismiss();
+        startActivity(intent, activityOptions.toBundle());
+
     }
 }

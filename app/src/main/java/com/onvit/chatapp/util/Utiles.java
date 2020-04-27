@@ -32,7 +32,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Utiles {
-    public static final int firstReadChatCount = 50;
+    public static final int firstReadChatCount = 200;
     public static AlertDialog createLoadingDialog(Context context, String text) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View view = LayoutInflater.from(context).inflate(R.layout.loading, null);
@@ -47,7 +47,6 @@ public class Utiles {
     }
 
     public static void sendFcm(List<String> registration_ids, String message, Context context, String toRoom, String uri) {
-        Log.d("들어오는수", "dd");
         Gson gson = new Gson();
         String userName = PreferenceManager.getString(context, "name");
         NotificationModel notificationModel = new NotificationModel();
@@ -69,6 +68,7 @@ public class Utiles {
         notificationModel.delay_while_idle = false;
         notificationModel.time_to_live = 0;
 
+        Log.d("fcmlog", notificationModel.toString());
         RequestBody requestBody = RequestBody.create(gson.toJson(notificationModel), MediaType.parse("application/json; charset=utf8"));
         Request request = new Request.Builder().header("Content-Type", "apllication/json")
                 .addHeader("Authorization", "key=" + PreferenceManager.getString(context, "serverKey") + "")

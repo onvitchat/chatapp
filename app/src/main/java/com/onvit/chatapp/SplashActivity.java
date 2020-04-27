@@ -72,29 +72,6 @@ public class SplashActivity extends AppCompatActivity {
                 .setMinimumFetchIntervalInSeconds(0) // 한시간에 최대 한번 요청할 수 있음. 한시간의 캐싱타임을 가짐.
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
-
-
-        //다음버전 배포하고 나서 삭제.
-        File path = Environment.getExternalStorageDirectory();
-        File dir = new File(path + "/KCHA");
-        if(dir.exists()){
-            String p = dir.getAbsolutePath();
-            setDirEmpty(p);
-        }
-    }
-    public void setDirEmpty (String dirName){
-        File dir = new File(dirName);
-        File[] childFileList = dir.listFiles();
-        if (dir.exists()) {
-            for (File childFile : childFileList) {
-                if (childFile.isDirectory()) {
-                    setDirEmpty(childFile.getAbsolutePath()); //하위 디렉토리
-                } else {
-                    childFile.delete(); //하위 파일
-                }
-            }
-            dir.delete();
-        }
     }
 
     @Override

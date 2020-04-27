@@ -56,11 +56,9 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
         TextView logout = view.findViewById(R.id.logout);
         TextView admin = view.findViewById(R.id.admin);
         final Switch notify = view.findViewById(R.id.notify);
-        TextView invite = view.findViewById(R.id.invite);
 
         logout.setOnClickListener(this);
         admin.setOnClickListener(this);
-        invite.setOnClickListener(this);
 
         notify.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -118,10 +116,6 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
                 break;
             case R.id.admin:
                 intent = new Intent(activity, AdminActivity.class);
-                startActivity(intent);
-                break;
-            case R.id.invite:
-                intent = new Intent(activity, InviteActivity.class);
                 startActivity(intent);
                 break;
         }

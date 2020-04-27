@@ -27,4 +27,15 @@ public class NotificationModel {
         public String uri;
     }
 
+    @Override
+    public String toString() {
+        return "NotificationModel{" +
+                "registration_ids=" + registration_ids +
+                ", data=" + data +
+                ", content_available=" + content_available +
+                ", priority='" + priority + '\'' +
+                ", time_to_live=" + time_to_live +
+                ", delay_while_idle=" + delay_while_idle +
+                '}';
+    }
 }

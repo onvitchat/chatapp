@@ -39,6 +39,7 @@ import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,7 +53,7 @@ import java.util.TimeZone;
 public class ChatFragment extends Fragment {
     private final int firstReadChatCount = Utiles.firstReadChatCount;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM월dd일");
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM.dd");
     private SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
     private ChatRecyclerViewAdapter chatRecyclerViewAdapter;
     private AppCompatActivity activity;
@@ -66,6 +67,9 @@ public class ChatFragment extends Fragment {
     private AlertDialog dialog;
     private Map<String, User> users = new HashMap<>();
     private ValueEventListener valueEventListener;
+    private ArrayList<User> userInfoList = new ArrayList<>();
+    private Map<String, Object> messageReadUsers = new HashMap<>();
+    private Map<String, Object> existUserGroupChat = new HashMap<>();
 
     public ChatFragment() {
     }
@@ -156,6 +160,9 @@ public class ChatFragment extends Fragment {
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.putExtra("toRoom", toRoom); // 방이름
         intent.putExtra("chatCount", newComments.size());// 채팅숫자
+        intent.putParcelableArrayListExtra("userInfo", userInfoList);
+        intent.putExtra("readUser", (Serializable) messageReadUsers);
+        intent.putExtra("existUser", (Serializable) existUserGroupChat);
         UserMap.setComments(newComments);
         intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
         ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(getActivity(), R.anim.frombottom, R.anim.totop);
@@ -164,6 +171,27 @@ public class ChatFragment extends Fragment {
     }
 
     private void getMessage(final String room) {
+        databaseReference.child("groupChat").child(room).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                userInfoList.clear();
+                messageReadUsers.clear();
+                existUserGroupChat.clear();
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                    messageReadUsers.put(item.getKey(), item.getValue());
+                    existUserGroupChat.put(item.getKey(), true);
+                    if (!item.getKey().equals(uid)) {
+                        userInfoList.add(users.get(item.getKey()));
+                    }
+                }
+                messageReadUsers.put(uid, true);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
         databaseReference.child("groupChat").child(room).child("comments").orderByChild("readUsers/" + uid).equalTo(false)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override

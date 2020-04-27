@@ -47,9 +47,6 @@
             android:name=".chat.ImgActivity"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".admin.InviteActivity"
-            android:screenOrientation="portrait" />
-        <activity
             android:name=".chat.vote.VoteActivity"
             android:screenOrientation="portrait" />
         <activity

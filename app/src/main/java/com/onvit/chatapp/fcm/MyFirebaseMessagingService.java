@@ -93,7 +93,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             } else {
                 try {
                     InputStream inputStream = new DownloadUri().execute(profile).get();
-                    profileBitmap = BitmapFactory.decodeStream(inputStream);
+                    if(inputStream==null){
+                        profileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.standard_profile);
+                    }else{
+                        profileBitmap = BitmapFactory.decodeStream(inputStream);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

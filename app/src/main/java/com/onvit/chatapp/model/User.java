@@ -140,9 +140,6 @@ public class User implements Comparable<User>, Parcelable {
 
     @Override
     public int compareTo(User user) {
-        if(user==null || user.getUserName()==null){
-            return 0;
-        }
         if(this.userName.compareTo(user.getUserName())>0){
             return 1;
         }else if(this.userName.compareTo(user.getUserName())<0){
