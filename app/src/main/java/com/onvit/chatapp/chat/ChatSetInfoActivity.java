@@ -93,8 +93,7 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
 
 
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
-        int width = (int) (dm.widthPixels * 0.7); // Display 사이즈의 70%
-        getWindow().getAttributes().width = width;
+        getWindow().getAttributes().width = (int) (dm.widthPixels * 0.7);
 
         this.setFinishOnTouchOutside(true);
 
@@ -182,7 +181,7 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
                 builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        AlertDialog d = Utiles.createLoadingDialog(ChatSetInfoActivity.this,"채팅내역을 삭제하는 중입니다.");
+                        final AlertDialog deleteDialog = Utiles.createLoadingDialog(ChatSetInfoActivity.this, "채팅내역을 삭제하는 중입니다.");
                         final Map<String, Object> map = new HashMap<>();
                         final Map<String, Object> map2 = new HashMap<>();
                         final Map<String, Object> voteMap = new HashMap<>();
@@ -266,6 +265,7 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
                                                                     FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments").push().setValue(comment);
                                                                 }
                                                                 setResult(99);
+                                                                deleteDialog.dismiss();
                                                                 finish();
                                                             }
 
@@ -296,7 +296,7 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
     class PeopleInfoRecyclerAdapter extends RecyclerView.Adapter<PeopleInfoRecyclerAdapter.CustomViewHolder> {
         ArrayList<User> userlist;
 
-        public PeopleInfoRecyclerAdapter(ArrayList<User> userlist) {
+        private PeopleInfoRecyclerAdapter(ArrayList<User> userlist) {
             this.userlist = userlist;
         }
 
@@ -348,12 +348,12 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
 
 
         private class CustomViewHolder extends RecyclerView.ViewHolder {
-            public ImageView imageView;
-            public TextView textView;
-            public TextView textView_hospital;
-            public TextView lineText;
+            private ImageView imageView;
+            private TextView textView;
+            private TextView textView_hospital;
+            private TextView lineText;
 
-            public CustomViewHolder(View view) {
+            private CustomViewHolder(View view) {
                 super(view);
                 imageView = view.findViewById(R.id.frienditem_imageview);
                 textView = view.findViewById(R.id.frienditem_textview);

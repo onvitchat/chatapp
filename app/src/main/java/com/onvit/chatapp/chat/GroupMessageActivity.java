@@ -121,22 +121,22 @@ import jp.wasabeef.glide.transformations.GrayscaleTransformation;
 
 public class GroupMessageActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private final int readMoreChatCount = 100;
-    private final int firstReadChatCount = Utiles.firstReadChatCount;
+    private final int readMoreChatCount = 100; // 위로 스크롤시 불러오는 채팅 수
+    private final int firstReadChatCount = Utiles.firstReadChatCount; // 처음 불러오는 채팅 수
     public Activity activity;
-    private int i = 0;
-    private int i2 = 0;
-    private Map<String, User> users = new HashMap<>();
-    private Map<String, Object> messageReadUsers = new HashMap<>();
-    private Map<String, Object> existUserGroupChat = new HashMap<>();
-    private List<ChatModel.Comment> newComments = new ArrayList<>();
-    private ArrayList<User> userInfoList = new ArrayList<>();
-    private List<Img> img_list = new ArrayList<>();
+    private int i = 0; // 처음불러오는 채팅 수 카운팅 하는용도.
+    private int i2 = 0; // 이것도 비슷한 역할
+    private Map<String, User> users = new HashMap<>(); // 앱 전체 유저 담고 있는 맵
+    private Map<String, Object> messageReadUsers = new HashMap<>(); // 해당방에 존재하는 유저들의 채팅 읽음 여부 판단
+    private Map<String, Object> existUserGroupChat = new HashMap<>(); // 해당방에 존재하는 유저들
+    private List<ChatModel.Comment> newComments = new ArrayList<>(); // 해당방의 채팅내역
+    private ArrayList<User> userInfoList = new ArrayList<>(); // 해당방에 존재하는 유저들의 정보
+    private List<Img> img_list = new ArrayList<>(); // 해당방의 이미지 리스트.
     private InputStream inputStream;
     private String toRoom, uid, uriText, shareText;
     private EditText editText;
-    private int last = 0;
-    private int commentCount = 0;
+    private int last = 0; // 채팅 맨아래 인덱스
+    private int commentCount = 0; // 최초 진입시 채팅개수
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm", Locale.KOREA);
     private SimpleDateFormat chatDateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA);
     private SimpleDateFormat changeDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 E요일", Locale.KOREA);
@@ -153,7 +153,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     private List<String> userUidList = new ArrayList<>();
     private ImageView back_btn, option;
     private TextView pCount,sendFile;
-    private Description description;
+    private Description description; // 크롤링하는 asynctask
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -256,7 +256,6 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         super.onResume();
         //채팅방들어왓을때 알림 지우는부분.
         String chatName;
-        Log.d("방이름", toRoom);
         if (toRoom.equals("normalChat")) {
             chatName = "회원채팅방";
             NotificationManagerCompat.from(this).cancel(0);
@@ -377,9 +376,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
                 last = layoutManager.findLastVisibleItemPosition(); // 화면 맨 아래 채팅 인덱스
 
-                //recyclerview 최상단
+//                recyclerview 최상단
                 if (!recyclerView.canScrollVertically(-1)) {
-                    loadChatMore();
+                    if(newComments.size()>=firstReadChatCount){
+                        loadChatMore();
+                    }
                 }
 
                 if (newComments.size() - last < 3) {
@@ -1127,12 +1128,14 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
                 ChatModel.Comment comment = dataSnapshot.getValue(ChatModel.Comment.class);
-                int a = newComments.indexOf(comment);
-                if (a == -1) {
-                    return;
+                if(comment!=null){
+                    int a = newComments.indexOf(comment);
+                    if (a == -1) {
+                        return;
+                    }
+                    newComments.remove(a);
+                    mFirebaseAdapter.notifyDataSetChanged();
                 }
-                newComments.remove(a);
-                mFirebaseAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -1507,6 +1510,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                             holder.linearLayout_to.setVisibility(View.INVISIBLE);
                             holder.textView_name.setVisibility(View.GONE);
                             if (newComments.get(position - 1).type.equals("io")) {
+                                holder.linearLayout_to.setVisibility(View.VISIBLE);
+                                holder.textView_name.setVisibility(View.VISIBLE);
                                 yourProfileImage(holder, position);
                             }
                         } else {//보낸시간은 다름
@@ -2030,12 +2035,12 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                                 ChatModel.Comment comment = new ChatModel.Comment();
                                 comment.setTimestamp(time);
                                 int index = newComments.indexOf(comment);
+
+                                //마지막 메세지이면 lastChat쪽도 수정함.
                                 if(position==index){
-                                    Log.d("메세지", "마지막메세지입니당.");
                                     deleteMessage(key, position,newComments.get(position).type);
                                     databaseReference.child("lastChat").child(toRoom).child("lastChat").setValue("삭제된 메세지입니다.");
                                 }else{
-                                    Log.d("메세지", "마지막메세지아닙니당.");
                                     deleteMessage(key, position,newComments.get(position).type);
                                 }
                             }
