@@ -44,9 +44,11 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.Notice;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
 import java.io.ByteArrayOutputStream;
@@ -66,8 +68,6 @@ public class SignUpActivity extends AppCompatActivity {
     private EditText email;
     private EditText grade;
     private EditText password;
-    private Button signup;
-    private TextInputLayout tGrade;
     private TextInputLayout tName;
     private TextInputLayout tHospital;
     private TextInputLayout tTel;
@@ -78,17 +78,11 @@ public class SignUpActivity extends AppCompatActivity {
     private User user;
     private String filePath;
 
-    private Map<String, Object> normalReadUser = new HashMap<>();
-    private Map<String, Object> normalExistUser = new HashMap<>();
-    private Map<String, Object> officerReadUser = new HashMap<>();
-    private Map<String, Object> officerExistUser = new HashMap<>();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
 
-//        getWindow().setStatusBarColor(Color.parseColor("#1F50B5"));
         imageUri = null;
         profileImageView = findViewById(R.id.signupActivity_imageview_profile);
 
@@ -113,15 +107,15 @@ public class SignUpActivity extends AppCompatActivity {
         tTel = findViewById(R.id.signupActivity_textInputLayout_tel);
         tEmail = findViewById(R.id.signupActivity_textInputLayout_email);
         tPassword = findViewById(R.id.signupActivity_textInputLayout_password);
-        tGrade = findViewById(R.id.signupActivity_textInputLayout_grade);
         tName.setErrorEnabled(true);
         tHospital.setErrorEnabled(true);
         tTel.setErrorEnabled(true);
         tEmail.setErrorEnabled(true);
         tPassword.setErrorEnabled(true);
-        signup = findViewById(R.id.signupActivity_button_signup);
+        Button signup = findViewById(R.id.signupActivity_button_signup);
         password.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
+        //회원가입
         if (getIntent().getParcelableExtra("modify") == null) {
             final User joinUser = getIntent().getParcelableExtra("user");
             grade.setText(joinUser.getGrade());
@@ -138,40 +132,6 @@ public class SignUpActivity extends AppCompatActivity {
             hospital.setFocusable(false);
             hospital.setClickable(false);
             signup.setText("회원가입");
-            FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("users").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    normalExistUser.clear();
-                    normalReadUser.clear();
-                    for (DataSnapshot item : dataSnapshot.getChildren()) {
-                        normalReadUser.put(item.getKey(), true);
-                        normalExistUser.put(item.getKey(), true);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
-            if (joinUser.getGrade().equals("임원")) {
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("users").addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        officerExistUser.clear();
-                        officerReadUser.clear();
-                        for (DataSnapshot item : dataSnapshot.getChildren()) {
-                            officerReadUser.put(item.getKey(), true);
-                            officerExistUser.put(item.getKey(), true);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-            }
             password.setOnEditorActionListener(new TextView.OnEditorActionListener() { // 완료눌러도 회원가입기능되게~
                 @Override
                 public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
@@ -213,7 +173,6 @@ public class SignUpActivity extends AppCompatActivity {
             tel.setClickable(false);
             hospital.setFocusable(false);
             hospital.setClickable(false);
-            password.setText("profileUpdate");
             tPassword.setVisibility(View.GONE);
             signup.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -233,10 +192,6 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     private void modify(final AlertDialog dialog) {
-        if (checkInfo()) {
-            return;
-        }
-
         if (imageUri != null && !imageUri.equals(Uri.parse(user.getUserProfileImageUrl()))) {
             Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
             ExifInterface exif = null;
@@ -245,34 +200,36 @@ public class SignUpActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-            Bitmap newBitmap = rotateBitmap(bitmap, orientation);
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            final byte[] bytes = baos.toByteArray();
-            final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(user.getUid());
-            UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
-            uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-                @Override
-                public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                    if (!task.isSuccessful()) {
-                        throw task.getException();
+            if(exif!=null){
+                int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                Bitmap newBitmap = rotateBitmap(bitmap, orientation);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                final byte[] bytes = baos.toByteArray();
+                final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(user.getUid());
+                UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
+                uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                    @Override
+                    public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                        if (!task.isSuccessful()) {
+                            throw task.getException();
+                        }
+                        return storageReference.getDownloadUrl();
                     }
-                    return storageReference.getDownloadUrl();
-                }
-            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-                //storageReference 에 저장한 이미지 uri를 불러옴
-                @Override
-                public void onComplete(@NonNull Task<Uri> task) {
-                    if (task.isSuccessful()) {
-                        Uri taskResult = task.getResult();
-                        String imageUri = taskResult.toString();
-                        modifyInfo(imageUri, dialog);
+                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                    //storageReference 에 저장한 이미지 uri를 불러옴
+                    @Override
+                    public void onComplete(@NonNull Task<Uri> task) {
+                        if (task.isSuccessful()) {
+                            Uri taskResult = task.getResult();
+                            String imageUri = taskResult.toString();
+                            modifyInfo(imageUri, dialog);
 
+                        }
                     }
-                }
-            });
+                });
+            }
+
         } else {
             String imageUri = user.getUserProfileImageUrl();
             modifyInfo(imageUri, dialog);
@@ -416,40 +373,44 @@ public class SignUpActivity extends AppCompatActivity {
                                 PreferenceManager.setString(SignUpActivity.this, "phone", user.getTel());
                                 PreferenceManager.setString(SignUpActivity.this, "uid", user.getUid());
 //                                PreferenceManager.setString(SignUpActivity.this, "grade", user.getGrade());
+                                Date date = new Date();
+                                long time = date.getTime();
                                 ChatModel.Comment normalComment = new ChatModel.Comment();
                                 normalComment.uid = uid;
                                 normalComment.message = String.format("%s(%s)님이 채팅방에 참여하였습니다.", user.getUserName(), user.getHospital());
-                                normalComment.timestamp = new Date().getTime();
+                                normalComment.timestamp = time;
                                 normalComment.type = "io";
-                                normalComment.readUsers = normalReadUser;
-                                normalComment.existUser = normalExistUser;
+                                normalComment.unReadCount = 0;
+                                ChatModel.Comment officerComment = new ChatModel.Comment();
+                                officerComment.uid = uid;
+                                officerComment.message = String.format("%s(%s)님이 채팅방에 참여하였습니다.", user.getUserName(), user.getHospital());
+                                officerComment.timestamp = time;
+                                officerComment.type = "io";
+                                officerComment.unReadCount = 0;
+
                                 Map<String, Object> map = new HashMap<>();
                                 Map<String, Object> map2 = new HashMap<>();
+                                LastChat.timeInfo timeInfo = new LastChat.timeInfo();
+                                timeInfo.setExitTime(time);
+                                timeInfo.setInitTime(time-1);
+                                timeInfo.setUnReadCount(0);
+                                FirebaseDatabase.getInstance().getReference().child("groupChat").child("회원채팅방").child("comments").push().setValue(normalComment);
                                 //각각의 그룹채팅방에 유저 정보 / 접속여부를 넣음
                                 if (user.getGrade().equals("임원")) {
-                                    ChatModel.Comment officerComment = new ChatModel.Comment();
-                                    officerComment.uid = uid;
-                                    officerComment.message = String.format("%s(%s)님이 채팅방에 참여하였습니다.", user.getUserName(), user.getHospital());
-                                    officerComment.timestamp = new Date().getTime();
-                                    officerComment.type = "io";
-                                    officerComment.readUsers = normalReadUser;
-                                    officerComment.existUser = normalExistUser;
-                                    map.put("normalChat/users/" + uid, false);
-                                    map.put("officerChat/users/" + uid, false);
-                                    map2.put("normalChat/chatName", "회원채팅방");
-                                    map2.put("officerChat/chatName", "임원채팅방");
-                                    map2.put("normalChat/users/" + uid, 0);
-                                    map2.put("officerChat/users/" + uid, 0);
-                                    map2.put("normalChat/existUsers/" + uid, true);
-                                    map2.put("officerChat/existUsers/" + uid, true);
-                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("comments").push().setValue(normalComment);
-                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("comments").push().setValue(officerComment);
+                                    map.put("회원채팅방/users/" + uid, false);
+                                    map.put("임원채팅방/users/" + uid, false);
+                                    map.put("회원채팅방/id/", 1);
+                                    map.put("임원채팅방/id/", 2);
+                                    map2.put("회원채팅방/chatName", "회원채팅방");
+                                    map2.put("회원채팅방/existUsers/" + uid, timeInfo);
+                                    map2.put("임원채팅방/chatName", "임원채팅방");
+                                    map2.put("임원채팅방/existUsers/" + uid, timeInfo);
+                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("임원채팅방").child("comments").push().setValue(officerComment);
                                 } else {
-                                    map.put("normalChat/users/" + uid, false);
-                                    map2.put("normalChat/chatName", "회원채팅방");
-                                    map2.put("normalChat/users/" + uid, 0);
-                                    map2.put("normalChat/existUsers/" + uid, true);
-                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("comments").push().setValue(normalComment);
+                                    map.put("회원채팅방/users/" + uid, false);
+                                    map.put("회원채팅방/id/", 1);
+                                    map2.put("회원채팅방/chatName", "회원채팅방");
+                                    map2.put("회원채팅방/existUsers/" + uid, timeInfo);
                                 }
                                 FirebaseDatabase.getInstance().getReference().child("groupChat").updateChildren(map);
                                 //lastChat방에 uid와 안읽은 메세지수 0으로 집어넣음.
@@ -460,6 +421,9 @@ public class SignUpActivity extends AppCompatActivity {
                                     @Override
                                     public void onClick(DialogInterface dialogInterface, int i) {
                                         Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
+                                        UserMap.clearApp();
+                                        UserMap.setUid(uid);
+                                        UserMap.getUserMap();
                                         intent.putExtra("user", user);
                                         startActivity(intent);
                                         finish();

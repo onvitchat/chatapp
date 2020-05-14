@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -37,6 +38,7 @@ import com.onvit.chatapp.R;
 import com.onvit.chatapp.chat.vote.VoteListActivity;
 import com.onvit.chatapp.contact.PersonInfoActivity;
 import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.model.Vote;
 import com.onvit.chatapp.util.UserMap;
@@ -61,16 +63,14 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
     private String toRoom;
     private List<String> deleteKey = new ArrayList<>();
     private List<String> deleteKey2 = new ArrayList<>();
-    private Map<String, Object> messageReadUsers = new HashMap<>();
-    private Map<String, Object> existUserGroupChat = new HashMap<>();
     private Map<String, User> users = new HashMap<>();
-
+    private List<Img> img_list = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_set_info);
 
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        uid = UserMap.getUid();
         toRoom = getIntent().getStringExtra("room");
         chat_info_linear_layout = findViewById(R.id.chat_info_linear_layout);
         recyclerView = findViewById(R.id.peopleinfo_recyclerview);
@@ -80,11 +80,9 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
         img = findViewById(R.id.img);
         out = findViewById(R.id.out);
         userList = getIntent().getParcelableArrayListExtra("userInfo");
-        messageReadUsers = (Map<String, Object>) getIntent().getSerializableExtra("readUser");
-        existUserGroupChat = (Map<String, Object>) getIntent().getSerializableExtra("existUser");
         users = UserMap.getInstance();
         User myInfo = users.get(uid);
-
+        img_list = getIntent().getParcelableArrayListExtra("imgList");
         Collections.sort(userList);
         userList.add(0, myInfo);
 
@@ -132,6 +130,7 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
             Map<String, Object> map = new HashMap<>();
             map.put(uid, false);
             FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("users").updateChildren(map);
+            FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).child("existUsers").child(uid).child("exitTime").setValue(System.currentTimeMillis());
         }
     }
 
@@ -158,6 +157,7 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
                 intent = new Intent(ChatSetInfoActivity.this, ImgActivity.class);
                 intent.putExtra("room", getIntent().getStringExtra("room"));
                 intent.putParcelableArrayListExtra("userlist", userList);
+                intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
                 overridePendingTransition(R.anim.fromleft, R.anim.toright);
@@ -167,8 +167,6 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
                 intent.putExtra("room", getIntent().getStringExtra("room"));
                 intent.putParcelableArrayListExtra("userlist", userList);
                 intent.putExtra("plus", "plus");
-                intent.putExtra("readUser", (Serializable) messageReadUsers);
-                intent.putExtra("existUser", (Serializable) existUserGroupChat);
                 intent.putExtra("room", toRoom);
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
@@ -185,13 +183,12 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
                         final Map<String, Object> map = new HashMap<>();
                         final Map<String, Object> map2 = new HashMap<>();
                         final Map<String, Object> voteMap = new HashMap<>();
-                        FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments").orderByChild("existUser/" + uid).equalTo(true)
+                        FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments")
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                         for (DataSnapshot i : dataSnapshot.getChildren()) {
                                             ChatModel.Comment comment = i.getValue(ChatModel.Comment.class);
-
                                             if (comment.getType().equals("img") || comment.getType().length() > 10) {
                                                 deleteKey.add(i.getKey());
                                             }
@@ -201,14 +198,9 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
                                                 String ext = comment.getMessage().substring(0, a).substring(b + 1);
                                                 deleteKey2.add(i.getKey() + "." + ext);
                                             }
-
-                                            map.put("comments/" + i.getKey() + "/existUser/" + uid, null);
                                         }
-
                                         map.put("users/" + uid, null);
-
                                         map2.put("existUsers/" + uid, null);
-                                        map2.put("users/" + uid, null);
                                         voteMap.put(uid, null);
 
                                         FirebaseDatabase.getInstance().getReference().child("Vote").child(toRoom).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -254,14 +246,12 @@ public class ChatSetInfoActivity extends AppCompatActivity implements View.OnCli
                                                                     FirebaseDatabase.getInstance().getReference().child("Vote").child(toRoom).setValue(null);
                                                                 } else {
                                                                     ChatModel.Comment comment = new ChatModel.Comment();
-                                                                    messageReadUsers.remove(uid);
-                                                                    existUserGroupChat.remove(uid);
+
                                                                     comment.uid = uid;
                                                                     comment.message = String.format("%s(%s)님이 나갔습니다.", users.get(uid).getUserName(), users.get(uid).getHospital());
                                                                     comment.timestamp = new Date().getTime();
                                                                     comment.type = "io";
-                                                                    comment.readUsers = messageReadUsers;
-                                                                    comment.existUser = existUserGroupChat;
+                                                                    comment.unReadCount = 0;
                                                                     FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments").push().setValue(comment);
                                                                 }
                                                                 setResult(99);

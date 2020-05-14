@@ -14,7 +14,6 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
@@ -34,6 +33,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.chat.BigPictureActivity;
+import com.onvit.chatapp.model.Img;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 import com.vlk.multimager.utils.Image;
 
@@ -52,8 +53,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
     DatabaseReference firebaseDatabase;
     ArrayList<String> list = new ArrayList<>();
     ArrayList<String> deleteKey = new ArrayList<>();
-    private Toolbar chatToolbar;
-    private ArrayList<String> registration_ids = new ArrayList<>();
+    ArrayList<Img> img_list = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,10 +74,10 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
         time.setText(getIntent().getStringExtra("time"));
         String pf = getIntent().getStringExtra("profile");
         code = getIntent().getStringExtra("code");
-        registration_ids = getIntent().getStringArrayListExtra("userList");
         firebaseDatabase = FirebaseDatabase.getInstance().getReference();
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        uid = UserMap.getUid();
         writer = getIntent().getStringExtra("writer");
+        img_list = getIntent().getParcelableArrayListExtra("img_list");
         delete = findViewById(R.id.delete);
         update = findViewById(R.id.update);
 
@@ -104,7 +104,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
                 }
             }
         }
-        chatToolbar = findViewById(R.id.notice_toolbar);
+        Toolbar chatToolbar = findViewById(R.id.notice_toolbar);
         chatToolbar.setBackgroundResource(R.color.notice);
         setSupportActionBar(chatToolbar);
         ActionBar actionBar = getSupportActionBar();
@@ -145,7 +145,6 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
             case R.id.update:
                 Intent intent = new Intent(NoticeActivity2.this, NoticeActivity.class);
                 intent.putExtra("modify", "modify");
-                intent.putStringArrayListExtra("userList", registration_ids);
                 intent.putExtra("title", title.getText().toString());
                 intent.putExtra("content", content.getText().toString());
                 intent.putExtra("code", code);
@@ -204,11 +203,9 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
                 break;
         }
     }
-
-
     class NoticeActivityRecyclerAdapter2 extends RecyclerView.Adapter<NoticeActivity2.NoticeActivityRecyclerAdapter2.NoticeViewHolder2> {
 
-        public NoticeActivityRecyclerAdapter2() {
+        private NoticeActivityRecyclerAdapter2() {
 
         }
 
@@ -230,6 +227,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
                     intent.putExtra("position", position);
                     intent.putStringArrayListExtra("list", imgPath);
                     intent.putExtra("name", name.getText().toString());
+                    intent.putParcelableArrayListExtra("imglist",img_list);
                     startActivity(intent);
                 }
             });

@@ -33,56 +33,68 @@
         <activity android:name=".chat.ViewAllActivity"></activity>
         <activity
             android:name=".chat.SelectPeopleActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".chat.vote.VoteRegistrationActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".chat.vote.VoteListActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".chat.vote.VoteDetailActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name=".chat.ImgActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".chat.vote.VoteActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteListActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.ImgActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".chat.FileActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteRegistrationActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".chat.ChatSetInfoActivity"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.PopUp" />
         <activity
-            android:name=".admin.AdminActivity"
-            android:screenOrientation="portrait" />
-        <activity
             android:name=".notice.NoticeActivity2"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".notice.NoticeActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".certification.CertificateActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".ad.ADActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".chat.BigPictureActivity"
-            android:screenOrientation="portrait" />
+            android:launchMode="singleTop"/>
         <activity
             android:name=".contact.PersonInfoActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.StatusBar" />
         <activity
             android:name=".chat.SelectGroupChatActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".chat.GroupMessageActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.chatStatusBar"
             android:windowSoftInputMode="adjustResize" />
@@ -99,10 +111,12 @@
         </activity>
         <activity
             android:name=".SignUpActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".LoginActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity

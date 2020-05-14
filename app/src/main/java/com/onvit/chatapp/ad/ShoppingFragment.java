@@ -29,16 +29,15 @@ import com.onvit.chatapp.ad.ADActivity;
 import com.onvit.chatapp.MainActivity;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ADlist;
+import com.onvit.chatapp.util.Utiles;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ShoppingFragment extends Fragment {
-    private AppCompatActivity activity;
-    private Toolbar chatToolbar;
     private ShoppingFragmentRecyclerAdapter ShoppingFragmentRecyclerAdapter;
     private List<ADlist> advertisement = new ArrayList<>();
-
+    private  AppCompatActivity activity;
     public ShoppingFragment() {
 
     }
@@ -47,12 +46,19 @@ public class ShoppingFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_shopping, container, false);
-        chatToolbar = view.findViewById(R.id.chat_toolbar);
+        Toolbar chatToolbar = view.findViewById(R.id.chat_toolbar);
         activity = (MainActivity) getActivity();
-        activity.setSupportActionBar(chatToolbar);
-        ActionBar actionBar = activity.getSupportActionBar();
-        actionBar.setTitle("구매");
+        if (activity != null) {
+            activity.setSupportActionBar(chatToolbar);
+            ActionBar actionBar = activity.getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.setTitle("구매");
+            }
+        }
         final RecyclerView recyclerView = view.findViewById(R.id.fragment_shop_recycler);
+        ShoppingFragmentRecyclerAdapter = new ShoppingFragmentRecyclerAdapter(advertisement);
+        recyclerView.setAdapter(ShoppingFragmentRecyclerAdapter);
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
         //광고
         FirebaseDatabase.getInstance().getReference().child("ADlist").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -62,9 +68,7 @@ public class ShoppingFragment extends Fragment {
                     ADlist aDlist = item.getValue(ADlist.class);
                     advertisement.add(aDlist);
                 }
-                ShoppingFragmentRecyclerAdapter = new ShoppingFragmentRecyclerAdapter(advertisement);
-                recyclerView.setAdapter(ShoppingFragmentRecyclerAdapter);
-                recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
+                ShoppingFragmentRecyclerAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -78,7 +82,7 @@ public class ShoppingFragment extends Fragment {
     class ShoppingFragmentRecyclerAdapter extends RecyclerView.Adapter<ShoppingFragmentRecyclerAdapter.CustomViewHolder> {
         private List<ADlist> advertisement;
 
-        public ShoppingFragmentRecyclerAdapter(List<ADlist> advertisement) {
+        private ShoppingFragmentRecyclerAdapter(List<ADlist> advertisement) {
             this.advertisement = advertisement;
         }
 
@@ -92,20 +96,28 @@ public class ShoppingFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull CustomViewHolder holder, final int position) {
             final String item = advertisement.get(position).getThumbnail();
-            Glide.with(getActivity()).load(item).placeholder(R.drawable.ic_shopping).override(180,180).into(holder.imageView);
+            Glide.with(activity).load(item).placeholder(R.drawable.ic_shopping).override(180, 180).into(holder.imageView);
             Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.blink_animation);
             holder.content.startAnimation(animation);
-            holder.content.setOnClickListener(new View.OnClickListener() {
+            holder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    //중복클릭방지
+                    if(Utiles.blockDoubleClick()){
+                        return;
+                    }
                     Intent intent = new Intent(getContext(), ADActivity.class);
                     intent.putExtra("ad", advertisement.get(position).getOriginal());
                     startActivity(intent);
                 }
             });
-            holder.imageView.setOnClickListener(new View.OnClickListener() {
+            holder.content.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    //중복클릭방지
+                    if(Utiles.blockDoubleClick()){
+                        return;
+                    }
                     Intent intent = new Intent(getContext(), ADActivity.class);
                     intent.putExtra("ad", advertisement.get(position).getOriginal());
                     startActivity(intent);
@@ -123,7 +135,7 @@ public class ShoppingFragment extends Fragment {
             ImageView imageView;
             TextView content;
 
-            public CustomViewHolder(View itemView) {
+            private CustomViewHolder(View itemView) {
                 super(itemView);
                 imageView = itemView.findViewById(R.id.item_tv_title);
                 content = itemView.findViewById(R.id.item_tv_content);

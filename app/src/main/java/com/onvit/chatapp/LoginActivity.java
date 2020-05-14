@@ -41,6 +41,7 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import com.onvit.chatapp.certification.CertificateActivity;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
 import java.util.ArrayList;
@@ -49,9 +50,6 @@ public class LoginActivity extends AppCompatActivity {
     private final static int PERMISSION_REQUEST_CODE = 1000;
     private EditText id;
     private EditText password;
-    private Button login;
-    private Button signup;
-    private Button search;
     private FirebaseAuth firebaseAuth;
     private FirebaseAuth.AuthStateListener authStateListener;
     private AlertDialog dialog;
@@ -70,9 +68,9 @@ public class LoginActivity extends AppCompatActivity {
 
         id = findViewById(R.id.loginactivity_edittext_id);
         password = findViewById(R.id.loginactivity_edittext_password);
-        login = findViewById(R.id.loginactivity_button_login);
-        signup = findViewById(R.id.loginactivity_button_signup);
-        search = findViewById(R.id.loginactivity_button_search);
+        Button login = findViewById(R.id.loginactivity_button_login);
+        Button signup = findViewById(R.id.loginactivity_button_signup);
+        Button search = findViewById(R.id.loginactivity_button_search);
         password.setImeOptions(EditorInfo.IME_ACTION_DONE);
         password.setOnEditorActionListener(new TextView.OnEditorActionListener() { // 완료눌러도 회원가입기능되게~
             @Override
@@ -135,22 +133,16 @@ public class LoginActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     //로그인
-                    FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
+                    final String uid = user.getUid();
+                    FirebaseDatabase.getInstance().getReference().child("Users").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                             // 가입한 유저들의 정보를 가지고옴.
-                            User user = null;
-                            for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                                if (FirebaseAuth.getInstance().getCurrentUser().getUid().equals(snapshot.getValue(User.class).getUid())) {
-                                    user = snapshot.getValue(User.class);
-                                    PreferenceManager.setString(LoginActivity.this, "name", user.getUserName());
-                                    PreferenceManager.setString(LoginActivity.this, "hospital", user.getHospital());
-                                    PreferenceManager.setString(LoginActivity.this, "phone", user.getTel());
-                                    PreferenceManager.setString(LoginActivity.this, "uid", user.getUid());
-//                                    PreferenceManager.setString(LoginActivity.this, "grade", user.getGrade());
-                                }
-                            }
+                            User user = dataSnapshot.getValue(User.class);
                             if (user != null) {
+                                UserMap.clearApp();
+                                UserMap.setUid(uid);
+                                UserMap.getUserMap();
                                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                                 intent.putExtra("user", user);
                                 intent.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -168,14 +160,14 @@ public class LoginActivity extends AppCompatActivity {
 
                         }
                     });
-                } else {
                 }
             }
         };
         requestPermission();
     }
+
     void loginEvent() {
-        if (id.getText().toString() == null || id.getText().toString().equals("") || password.getText().toString() == null || password.getText().toString().equals("")) {
+        if (id.getText().toString().trim().equals("") || password.getText().toString().trim().equals("")) {
             return;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
@@ -192,7 +184,6 @@ public class LoginActivity extends AppCompatActivity {
                             //로그인 실패한부분
                             Utiles.customToast(LoginActivity.this, "이메일과 비밀번호를 정확하게 입력하세요.").show();
                             dialog.dismiss();
-                        } else {
                         }
                     }
                 });
@@ -259,56 +250,53 @@ public class LoginActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSION_REQUEST_CODE: {
-                if (grantResults.length < 1) {
-                    Utiles.customToast(LoginActivity.this, "권한을 받아오는데 실패하였습니다.").show();
-                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-                    return;
-                }
-                for (int i = 0; i < grantResults.length; i++) {
-                    String permission = permissions[i];
-                    if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                        boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(this, permission);
-                        if (!showRationale) {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
-                            builder.setMessage("앱의 원활한 사용을 위해 권한을 허용해야 합니다. 앱 정보로 이동합니다.\n [저장공간]권한을 허용해주세요.");
-                            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                                    Uri uri = Uri.fromParts("package", getPackageName(), null);
-                                    intent.setData(uri);
-                                    startActivity(intent);
-                                    finish();
-                                }
-                            });
-                            AlertDialog dialog = builder.create();
-                            dialog.setCancelable(false);
-                            dialog.setCanceledOnTouchOutside(false);
-                            dialog.show();
-                        } else {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
-                            builder.setMessage("앱의 원활한 사용을 위해 권한을 허용해야 합니다.");
-                            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    requestPermission();
-
-                                }
-                            });
-                            final AlertDialog dialog = builder.create();
-                            dialog.setCancelable(false);
-                            dialog.setCanceledOnTouchOutside(false);
-                            dialog.show();
-                        }
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length < 1) {
+                Utiles.customToast(LoginActivity.this, "권한을 받아오는데 실패하였습니다.").show();
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                return;
+            }
+            for (int i = 0; i < grantResults.length; i++) {
+                String permission = permissions[i];
+                if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                    boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(this, permission);
+                    if (!showRationale) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+                        builder.setMessage("앱의 원활한 사용을 위해 권한을 허용해야 합니다. 앱 정보로 이동합니다.\n [저장공간]권한을 허용해주세요.");
+                        builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                                intent.setData(uri);
+                                startActivity(intent);
+                                finish();
+                            }
+                        });
+                        AlertDialog dialog = builder.create();
+                        dialog.setCancelable(false);
+                        dialog.setCanceledOnTouchOutside(false);
+                        dialog.show();
                     } else {
-                        Utiles.customToast(LoginActivity.this, "권한을 허용하였습니다.").show();
-                        // Initialize 코드
+                        AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+                        builder.setMessage("앱의 원활한 사용을 위해 권한을 허용해야 합니다.");
+                        builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                requestPermission();
+
+                            }
+                        });
+                        final AlertDialog dialog = builder.create();
+                        dialog.setCancelable(false);
+                        dialog.setCanceledOnTouchOutside(false);
+                        dialog.show();
                     }
+                } else {
+                    Utiles.customToast(LoginActivity.this, "권한을 허용하였습니다.").show();
+                    // Initialize 코드
                 }
             }
-            break;
         }
 
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

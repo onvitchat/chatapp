@@ -41,24 +41,23 @@ import java.util.Locale;
 
 public class BigPictureActivity extends AppCompatActivity implements View.OnClickListener {
     private static final int WRITE_EXTERNAL_STORAGE_CODE = 1;
-    private Toolbar chatToolbar;
+    int c = 0;
     private PhotoView imageView;
-    private LinearLayout imageView2;
     private ImageView left, right;
     private ArrayList<String> list = new ArrayList<>();
     private int position;
-    private ArrayList<Img> imgList = new ArrayList<>();
     private ArrayList<String> namelist = new ArrayList<>();
-    private  ActionBar actionBar;
+    private ActionBar actionBar;
     private Activity activity;
-    int c = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_big_picture);
+
         activity = BigPictureActivity.this;
-        chatToolbar = findViewById(R.id.chat_toolbar);
+        Toolbar chatToolbar = findViewById(R.id.chat_toolbar);
         chatToolbar.setBackgroundResource(R.color.black);
         setSupportActionBar(chatToolbar);
         actionBar = getSupportActionBar();
@@ -73,37 +72,38 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         r.setAlpha(150);
         left.setVisibility(View.GONE);
         right.setVisibility(View.GONE);
-        imgList=getIntent().getParcelableArrayListExtra("imglist");
-        if(getIntent().getIntExtra("position", -1) != -1){
+        ArrayList<Img> imgList = getIntent().getParcelableArrayListExtra("imglist");
+        if (getIntent().getIntExtra("position", -1) != -1) {
             position = getIntent().getIntExtra("position", -1);
-            if(imgList!=null && imgList.size()>0){
-                for(Img a : imgList){
+            if (imgList != null && imgList.size() > 0) {
+                for (Img a : imgList) {
                     list.add(a.getUri());
                     namelist.add(a.getName());
                 }
-            }else{
+            } else {
                 list = getIntent().getStringArrayListExtra("list");
+                namelist.add(getIntent().getStringExtra("name"));
             }
         }
         String uri = getIntent().getStringExtra("uri");
 
-        drawImg(uri,getIntent().getStringExtra("name"));
+        drawImg(uri, getIntent().getStringExtra("name"));
     }
 
     private void drawImg(String uri, String name) {
 
-        if(list.size()>0){
-            if(position==0 && list.size()>1){
+        if (list.size() > 0) {
+            if (position == 0 && list.size() > 1) {
                 right.setVisibility(View.VISIBLE);
                 left.setVisibility(View.GONE);
-            }else if(position==list.size()-1 && list.size()>1){
+            } else if (position == list.size() - 1 && list.size() > 1) {
                 left.setVisibility(View.VISIBLE);
                 right.setVisibility(View.GONE);
-            }else{
+            } else {
                 right.setVisibility(View.VISIBLE);
                 left.setVisibility(View.VISIBLE);
             }
-            if(list.size()==1){
+            if (list.size() == 1) {
                 left.setVisibility(View.GONE);
                 right.setVisibility(View.GONE);
             }
@@ -114,25 +114,25 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(list.size()>1){
+                if (list.size() > 1) {
                     c++;
-                    if(position==0){
-                        if(c%2==0){
+                    if (position == 0) {
+                        if (c % 2 == 0) {
                             right.setVisibility(View.VISIBLE);
-                        }else{
+                        } else {
                             right.setVisibility(View.GONE);
                         }
-                    }else if(position==list.size()-1){
-                        if(c%2==0){
+                    } else if (position == list.size() - 1) {
+                        if (c % 2 == 0) {
                             left.setVisibility(View.VISIBLE);
-                        }else{
+                        } else {
                             left.setVisibility(View.GONE);
                         }
-                    }else{
-                        if(c%2==0){
+                    } else {
+                        if (c % 2 == 0) {
                             left.setVisibility(View.VISIBLE);
                             right.setVisibility(View.VISIBLE);
-                        }else{
+                        } else {
                             left.setVisibility(View.GONE);
                             right.setVisibility(View.GONE);
                         }
@@ -140,13 +140,13 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
                 }
             }
         });
-        imageView2 = findViewById(R.id.img_share);
+        LinearLayout imageView2 = findViewById(R.id.img_share);
         actionBar.setTitle(name);
 
         LinearLayout downImg = findViewById(R.id.img_down);
-        if(uri.equals("noImg")){
+        if (uri.equals("noImg")) {
             Glide.with(this).load(R.drawable.standard_profile).apply(new RequestOptions().fitCenter()).into(imageView);
-        }else{
+        } else {
             Glide.with(this).load(uri).apply(new RequestOptions().fitCenter()).into(imageView);
         }
         downImg.setOnClickListener(new View.OnClickListener() {
@@ -163,7 +163,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         });
     }
 
-    void imgShare(ImageView img){
+    void imgShare(ImageView img) {
         Bitmap bitmap = ((BitmapDrawable) img.getDrawable()).getBitmap();
         String time = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(System.currentTimeMillis());
         String imagename = time + ".PNG";
@@ -196,7 +196,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
-    void imgDownLoad(){
+    void imgDownLoad() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
                 String[] permission = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
@@ -219,15 +219,11 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                     out.flush();
                     out.close();
-//            Snackbar.make(layoutPicture,"사진이 저장되었습니다.",Snackbar.LENGTH_SHORT).setAction("닫기", new View.OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//                }
-//            }).show();
+
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if(!activity.isDestroyed()){
+                            if (!activity.isDestroyed()) {
                                 Utiles.customToast(BigPictureActivity.this, "사진이 저장되었습니다.").show();
                             }
                         }
@@ -240,6 +236,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         }).start();
 
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
@@ -247,7 +244,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                 } else {
-                    Utiles.customToast(BigPictureActivity.this,"Permission enable").show();
+                    Utiles.customToast(BigPictureActivity.this, "Permission enable").show();
                 }
         }
     }
@@ -267,41 +264,42 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.left_arrow:
-                if(position<=list.size()-1){
-                    position = position -1;
+                if (position <= list.size() - 1) {
+                    position = position - 1;
                     String uri = list.get(position);
                     String name;
-                    if(namelist.size()>0){
+                    if (namelist.size() > 0) {
                         name = namelist.get(position);
-                    }else{
+                    } else {
                         name = getIntent().getStringExtra("name");
                     }
                     drawImg(uri, name);
                 }
-                if(position==0){
+                if (position == 0) {
                     return;
                 }
                 break;
             case R.id.right_arrow:
-                if(position>=0){
+                if (position >= 0) {
                     position = position + 1;
                     String uri = list.get(position);
                     String name;
-                    if(namelist.size()>0){
+                    if (namelist.size() > 0) {
                         name = namelist.get(position);
-                    }else{
+                    } else {
                         name = getIntent().getStringExtra("name");
                     }
                     drawImg(uri, name);
                 }
-                if(position==list.size()-1){
+                if (position == list.size() - 1) {
                     return;
                 }
                 break;
         }
     }
+
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         outState.putInt("position", position);
@@ -313,6 +311,6 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         super.onRestoreInstanceState(savedInstanceState);
         position = savedInstanceState.getInt("position");
         String uri = list.get(position);
-        drawImg(uri,namelist.get(position));
+        drawImg(uri, namelist.get(position));
     }
 }

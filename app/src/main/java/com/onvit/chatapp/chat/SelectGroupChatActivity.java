@@ -50,8 +50,6 @@ import java.util.Objects;
 import java.util.TimeZone;
 
 public class SelectGroupChatActivity extends AppCompatActivity {
-
-    private final int firstReadChatCount = Utiles.firstReadChatCount;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM.dd", Locale.KOREA);
     private SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm", Locale.KOREA);
@@ -65,8 +63,8 @@ public class SelectGroupChatActivity extends AppCompatActivity {
     private AlertDialog dialog;
     private Map<String, User> users = new HashMap<>();
     private ArrayList<User> userInfoList = new ArrayList<>();
-    private Map<String, Object> messageReadUsers = new HashMap<>();
-    private Map<String, Object> existUserGroupChat = new HashMap<>();
+    private SelectGroupChatRecyclerAdapter selectGroupChatRecyclerAdapter;
+    private int count = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +75,9 @@ public class SelectGroupChatActivity extends AppCompatActivity {
         setSupportActionBar(chatToolbar);
         ActionBar actionBar = getSupportActionBar();
         users = UserMap.getInstance();
-        actionBar.setTitle("공유할 채팅방을 선택하세요.");
+        if (actionBar != null) {
+            actionBar.setTitle("공유할 채팅방을 선택하세요.");
+        }
         if (firebaseAuth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
             firebaseAuth.signOut();
@@ -93,11 +93,39 @@ public class SelectGroupChatActivity extends AppCompatActivity {
             uri = getIntent().getParcelableExtra("shareUri");
 
         }
-        UserMap.setComments(newComments);
-        RecyclerView recyclerView = findViewById(R.id.selectGroupChat_recyclerview);
-        recyclerView.setAdapter(new SelectGroupChatRecyclerAdapter());
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        uid = UserMap.getUid();// 클라이언트uid
 
+        selectGroupChatRecyclerAdapter = new SelectGroupChatRecyclerAdapter();
+        RecyclerView recyclerView = findViewById(R.id.selectGroupChat_recyclerview);
+        recyclerView.setAdapter(selectGroupChatRecyclerAdapter);
+        LinearLayoutManager manager = new LinearLayoutManager(this);
+        manager.setReverseLayout(true);
+        manager.setStackFromEnd(true);
+        recyclerView.setLayoutManager(manager);
+
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) { // 해당되는 chatrooms들의 키값들이 넘어옴.
+                ArrayList<LastChat> chat = new ArrayList<>();
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    LastChat l = snapshot.getValue(LastChat.class);
+                    if (l != null) {
+                        if (l.getExistUsers().get(uid) != null) {
+                            chat.add(l);
+                        }
+                    }
+                }
+                chatModels = (ArrayList<LastChat>) chat.clone();
+                selectGroupChatRecyclerAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        databaseReference.child("lastChat").orderByChild("timestamp").addValueEventListener(valueEventListener);
+        UserMap.setComments(newComments);
     }
 
     @Override
@@ -108,46 +136,32 @@ public class SelectGroupChatActivity extends AppCompatActivity {
         }
     }
 
-    private void goChatRoom(String toRoom) {
-        Intent intent = null;
-        intent = new Intent(SelectGroupChatActivity.this, GroupMessageActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("toRoom", toRoom); // 방이름
-        intent.putExtra("chatCount", newComments.size());// 채팅숫자
-        intent.putParcelableArrayListExtra("userInfo", userInfoList);
-        intent.putExtra("readUser", (Serializable) messageReadUsers);
-        intent.putExtra("existUser", (Serializable) existUserGroupChat);
-        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
-        UserMap.setComments(newComments);
-        if (text != null) {
-            intent.putExtra("shareText", text);
-        }
-        if (uri != null) {
-            intent.putExtra("filePath", getIntent().getStringExtra("filePath"));
-            intent.putExtra("shareUri", uri);
-        }
-        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectGroupChatActivity.this, R.anim.frombottom, R.anim.totop);
-        dialog.dismiss();
-        startActivity(intent, activityOptions.toBundle());
-        finish();
-
+    private void enterRoom(int position) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(SelectGroupChatActivity.this);
+        View noticeView = LayoutInflater.from(SelectGroupChatActivity.this).inflate(R.layout.access, null);
+        builder.setView(noticeView);
+        dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.setCancelable(false);
+        dialog.show();
+        UserMap.clearComments();
+        String toRoom = chatModels.get(position).getChatName();
+        long exitTime = chatModels.get(position).getExistUsers().get(uid).getExitTime();
+        long initTime = chatModels.get(position).getExistUsers().get(uid).getInitTime();
+        getMessage(toRoom, initTime, exitTime);
     }
 
-    private void getMessage(final String room) {
+    private void getMessage(final String room, final long initTime, final long exitTime) {
+        UserMap.setInit(initTime);
         databaseReference.child("groupChat").child(room).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 userInfoList.clear();
-                messageReadUsers.clear();
-                existUserGroupChat.clear();
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    messageReadUsers.put(item.getKey(), item.getValue());
-                    existUserGroupChat.put(item.getKey(), true);
                     if (!item.getKey().equals(uid)) {
                         userInfoList.add(users.get(item.getKey()));
                     }
                 }
-                messageReadUsers.put(uid, true);
             }
 
             @Override
@@ -155,34 +169,15 @@ public class SelectGroupChatActivity extends AppCompatActivity {
 
             }
         });
-        databaseReference.child("groupChat").child(room).child("comments").orderByChild("readUsers/" + uid).equalTo(false)
+        // 방최초접속한 이후의 채팅들을 불러옴.
+        databaseReference.child("groupChat").child(room).child("comments").orderByChild("timestamp").startAt(initTime)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        Map<String, Object> map = new HashMap<>();
-                        if (dataSnapshot.getChildrenCount() > 0) {
-                            for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                map.put(Objects.requireNonNull(item.getKey()) + "/readUsers/" + uid, true);
-                            }
-                            databaseReference.child("groupChat").child(room).child("comments").updateChildren(map);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-        databaseReference.child("groupChat").child(room).child("comments").orderByChild("existUser/" + uid).equalTo(true).limitToLast(firstReadChatCount)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
                         for (DataSnapshot i : dataSnapshot.getChildren()) {
                             ChatModel.Comment c = i.getValue(ChatModel.Comment.class);
-                            c.readUsers.put(uid, true);
                             c.setKey(i.getKey());
                             newComments.add(c);
-
                             if (c.getType().equals("img")) {
                                 Img img = new Img();
                                 if (users.get(c.getUid()) == null) {
@@ -199,15 +194,12 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                                     uri = c.message.substring(secondIndex + 1);
                                 }
                                 img.setUri(uri);
-                                String time = String.valueOf((long) c.getTimestamp());
+                                String time = String.valueOf(c.getTimestamp());
                                 img.setTime(time);
                                 img_list.add(img);
                             }
                         }
-                        Map<String, Object> map = new HashMap<>();
-                        map.put(uid, 0);
-                        databaseReference.child("lastChat").child(room).child("users").updateChildren(map);
-                        goChatRoom(room);
+                        goChatRoom(room, exitTime);
                     }
 
                     @Override
@@ -217,29 +209,33 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                 });
     }
 
+    private void goChatRoom(String toRoom, long exitTime) {
+        Intent intent = new Intent(SelectGroupChatActivity.this, GroupMessageActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("toRoom", toRoom); // 방이름
+        intent.putExtra("chatCount", newComments.size());// 채팅숫자
+        intent.putExtra("exitTime", exitTime);
+        intent.putParcelableArrayListExtra("userInfo", userInfoList);
+        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
+        UserMap.setComments(newComments);
+        if (text != null) {
+            intent.putExtra("shareText", text);
+        }
+        if (uri != null) {
+            intent.putExtra("filePath", getIntent().getStringExtra("filePath"));
+            intent.putExtra("shareUri", uri);
+        }
+        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectGroupChatActivity.this, R.anim.frombottom, R.anim.totop);
+        dialog.dismiss();
+        startActivity(intent, activityOptions.toBundle());
+        finish();
+
+    }
+
     class SelectGroupChatRecyclerAdapter extends RecyclerView.Adapter<SelectGroupChatRecyclerAdapter.CustomViewHolder> {
 
         private SelectGroupChatRecyclerAdapter() {
-            uid = FirebaseAuth.getInstance().getCurrentUser().getUid();// 클라이언트uid
-            valueEventListener = new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) { // 해당되는 chatrooms들의 키값들이 넘어옴.
-                    chatModels.clear();
-                    for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
-                        final LastChat lastChat = item.getValue(LastChat.class);
-                        chatModels.add(lastChat);// 채팅방 밖에 표시할 내용들.
 
-                    }
-                    Collections.sort(chatModels);
-                    notifyDataSetChanged();
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            };
-            databaseReference.child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addValueEventListener(valueEventListener);
         }
 
         @NonNull
@@ -265,41 +261,45 @@ public class SelectGroupChatActivity extends AppCompatActivity {
             //마지막으로 보낸 메세지
 
             String lastChat = chatModels.get(position).getLastChat();
-            holder.textView_last_message.setText(lastChat);
             //보낸 시간
             if (chatModels.get(position).getTimestamp() == 0) {
                 holder.textView_timestamp.setVisibility(View.INVISIBLE);
                 holder.textView_timestamp2.setVisibility(View.INVISIBLE);
+                holder.textView_last_message.setText("");
             } else {
-                simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-                simpleDateFormat2.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-                long unixTime = (long) chatModels.get(position).getTimestamp();
-                Date date = new Date(unixTime);
-                Date date2 = new Date();
-                SimpleDateFormat sd = new SimpleDateFormat("yyyyMMddHHmm", Locale.KOREA);
-                sd.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-                String dS = sd.format(date);
-                String dS2 = sd.format(date2);
-
-                holder.textView_timestamp.setVisibility(View.VISIBLE);
-                holder.textView_timestamp2.setVisibility(View.VISIBLE);
-                if (dS2.substring(0, 8).equals(dS.substring(0, 8))) {
-                    if (Integer.parseInt(dS.substring(8)) < 1200) {
-                        holder.textView_timestamp.setText("오전");
-                        holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                if (chatModels.get(position).getExistUsers().get(uid).getInitTime() > chatModels.get(position).getTimestamp()) {
+                    holder.textView_last_message.setText("");
+                } else {
+                    holder.textView_last_message.setText(lastChat);
+                    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+                    simpleDateFormat2.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+                    long unixTime = chatModels.get(position).getTimestamp();
+                    Date date = new Date(unixTime);
+                    Date date2 = new Date();
+                    SimpleDateFormat sd = new SimpleDateFormat("yyyyMMddHHmm", Locale.KOREA);
+                    sd.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+                    String dS = sd.format(date);
+                    String dS2 = sd.format(date2);
+                    holder.textView_timestamp.setVisibility(View.VISIBLE);
+                    holder.textView_timestamp2.setVisibility(View.VISIBLE);
+                    if (dS2.substring(0, 8).equals(dS.substring(0, 8))) {
+                        if (Integer.parseInt(dS.substring(8)) < 1200) {
+                            holder.textView_timestamp.setText("오전");
+                            holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                        } else {
+                            holder.textView_timestamp.setText("오후");
+                            holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                        }
                     } else {
-                        holder.textView_timestamp.setText("오후");
+                        holder.textView_timestamp.setText(simpleDateFormat.format(date));
                         holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
                     }
-                } else {
-                    holder.textView_timestamp.setText(simpleDateFormat.format(date));
-                    holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
                 }
             }
-
             //안읽은 메세지 숫자
-            if (chatModels.get(position).getUsers().get(uid) != null && chatModels.get(position).getUsers().get(uid) != 0) {
-                holder.textView_count.setText(chatModels.get(position).getUsers().get(uid) + "");
+            if (chatModels.get(position).getExistUsers().get(uid).getUnReadCount() != 0) {
+                String count = chatModels.get(position).getExistUsers().get(uid).getUnReadCount() + "";
+                holder.textView_count.setText(count);
                 holder.textView_count.setVisibility(View.VISIBLE);
             }
             holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -316,24 +316,6 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                     }
                 }
             });
-        }
-
-        private void enterRoom(int position) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(SelectGroupChatActivity.this);
-            View noticeView = getLayoutInflater().from(SelectGroupChatActivity.this).inflate(R.layout.access, null);
-            builder.setView(noticeView);
-            dialog = builder.create();
-            dialog.setCanceledOnTouchOutside(false);
-            dialog.setCancelable(false);
-            dialog.show();
-            UserMap.clearComments();
-            String toRoom = chatModels.get(position).getChatName();
-            if (chatModels.get(position).getChatName().equals("회원채팅방")) {
-                toRoom = "normalChat";
-            } else if (chatModels.get(position).getChatName().equals("임원채팅방")) {
-                toRoom = "officerChat";
-            }
-            getMessage(toRoom);
         }
 
         @Override

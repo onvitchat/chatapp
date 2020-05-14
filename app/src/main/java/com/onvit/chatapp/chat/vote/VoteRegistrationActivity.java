@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,6 +27,8 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ChatModel;
@@ -44,19 +47,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 public class VoteRegistrationActivity extends AppCompatActivity {
-    Map<String, Object> messageReadUsers = new HashMap<>();
-    Map<String, Object> existUserGroupChat = new HashMap<>();
-    SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
+    SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
     ArrayList<User> userList2;
-    private Toolbar toolbar;
-    private RadioGroup radioGroup;
     private RadioButton radio_text, radio_date;
     private LinearLayout text_layout, date_layout;
-    private TextView plus, register, deadline;
+    private TextView deadline;
     private EditText vote_title;
     private String date, toRoom, uid;
     private ValueEventListener accessChatMemberEventListener;
@@ -70,38 +70,34 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_vote_registration);
 
-        toolbar = findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setBackgroundResource(R.color.notice);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         String chatName;
         toRoom = getIntent().getStringExtra("room");
-        if (toRoom.equals("normalChat")) {
-            chatName = "회원채팅방 투표등록";
-        } else if (toRoom.equals("officerChat")) {
-            chatName = "임원채팅방 투표등록";
-        } else {
-            chatName = toRoom + "투표등록";
+        chatName = toRoom + "투표등록";
+        if(actionBar!=null){
+            actionBar.setTitle(chatName);
+            actionBar.setDisplayHomeAsUpEnabled(true);
         }
-        actionBar.setTitle(chatName);
-        actionBar.setDisplayHomeAsUpEnabled(true);
         users = UserMap.getInstance();
         userList2 = getIntent().getParcelableArrayListExtra("userList");
         userList = new HashMap<>();
         registration_ids = new ArrayList<>();
-        radioGroup = findViewById(R.id.radio_group);
+        RadioGroup radioGroup = findViewById(R.id.radio_group);
         radio_text = findViewById(R.id.radio_text);
         radio_date = findViewById(R.id.radio_date);
         text_layout = findViewById(R.id.text_group);
         date_layout = findViewById(R.id.date_group);
-        plus = findViewById(R.id.plus);
+        TextView plus = findViewById(R.id.plus);
         vote_title = findViewById(R.id.vote_title);
-        register = findViewById(R.id.register);
+        TextView register = findViewById(R.id.register);
         deadline = findViewById(R.id.deadline);
 
         databaseReference = FirebaseDatabase.getInstance().getReference();
 
-        uid = PreferenceManager.getString(VoteRegistrationActivity.this, "uid");
+        uid = UserMap.getUid();
 
         final LayoutInflater layoutInflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 
@@ -245,48 +241,48 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                                 accessChatMemberEventListener = new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        final ArrayList<String> unReader = new ArrayList<>();
                                         for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                            Log.d("순서", "accessChatMemberEventListener");
-                                            messageReadUsers.put(item.getKey(), item.getValue());
-                                            existUserGroupChat.put(item.getKey(), true);
+                                            if(!(boolean)item.getValue()){
+                                                unReader.add(item.getKey());
+                                            }
                                         }
                                         final ChatModel.Comment comment = new ChatModel.Comment();
                                         comment.uid = uid; // 채팅친사람
                                         comment.message = title + "!@#!@#" + deadline.getTag(R.id.deadline); // 채팅친내용
                                         comment.timestamp = new Date().getTime(); // 채팅친 시간
                                         comment.type = "vote"; // 채팅 친 종류
-                                        comment.readUsers = messageReadUsers; // 읽은사람들
-                                        comment.existUser = existUserGroupChat;
-
+                                        comment.unReadCount = unReader.size();
                                         databaseReference.child("groupChat").child(toRoom).child("comments").child(userMessageKeyRef.getKey()).setValue(comment);
 
-                                        databaseReference.child("lastChat").child(toRoom).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                                        databaseReference.child("lastChat").child(toRoom).child("existUsers").runTransaction(new Transaction.Handler() {
+                                            @NonNull
                                             @Override
-                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                Map<String, Object> unreadUser = (Map<String, Object>) dataSnapshot.getValue();
-                                                Map<String, Object> read = comment.readUsers; // 읽은사람구분
-                                                Set<String> keys = read.keySet();
-                                                Iterator<String> it = keys.iterator();
-                                                while (it.hasNext()) {
-                                                    String key1 = it.next();
-                                                    Object value = read.get(key1);
-                                                    if ((Boolean) value == false) {
-                                                        //메세지 안읽었으면 기존꺼에서 1추가함.
-                                                        unreadUser.put(key1, ((int) (long) unreadUser.get(key1)) + 1);
+                                            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+                                                if(mutableData.getValue()==null){
+                                                    return Transaction.success(mutableData);
+                                                }
+                                                Map<String, Map<String,Object>> map = (Map<String, Map<String, Object>>) mutableData.getValue();
+                                                Set<String> key = map.keySet();
+                                                for(String k : key){
+                                                    Map<String,Object> map2 = map.get(k);
+                                                    if(unReader.contains(k)){
+                                                        long count = (long) map2.get("unReadCount");
+                                                        map2.put("unReadCount", count+1);
                                                     }
                                                 }
-                                                Map<String, Object> lastMap = new HashMap<>();
-                                                lastMap.put("lastChat", "투표 : " + comment.message.split("!@#!@#")[0]);
-                                                lastMap.put("timestamp", comment.timestamp);
-                                                lastMap.put("users", unreadUser);
-                                                FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).updateChildren(lastMap); // 마지막 메세지 표시
+                                                mutableData.setValue(map);
+                                                return Transaction.success(mutableData);
                                             }
-
                                             @Override
-                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                                            public void onComplete(@Nullable DatabaseError databaseError, boolean b, @Nullable DataSnapshot dataSnapshot) {
 
                                             }
                                         });
+                                        Map<String, Object> lastMap = new HashMap<>();
+                                        lastMap.put("lastChat", "투표 : " + comment.message.split("!@#!@#")[0]);
+                                        lastMap.put("timestamp", comment.timestamp);
+                                        FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).updateChildren(lastMap); // 마지막 메세지 표시
                                         a.dismiss();
                                         Utiles.customToast(VoteRegistrationActivity.this, "투표를 등록하였습니다.").show();
                                         databaseReference.child("groupChat").child(toRoom).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -303,7 +299,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
 
                                                     }
                                                 }
-                                                Utiles.sendFcm(registration_ids, "투표를 등록하였습니다.", VoteRegistrationActivity.this, toRoom,users.get(uid).getUserProfileImageUrl());
+                                                Utiles.sendFcm(registration_ids, "투표를 등록하였습니다.", VoteRegistrationActivity.this, toRoom, users.get(uid).getUserProfileImageUrl());
                                             }
 
                                             @Override

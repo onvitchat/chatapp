@@ -145,6 +145,7 @@ public class VoteListActivity extends AppCompatActivity {
             Map<String, Object> map = new HashMap<>();
             map.put(uid, false);
             FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("users").updateChildren(map);
+            FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).child("existUsers").child(uid).child("exitTime").setValue(System.currentTimeMillis());
         }
     }
     //뒤로가기 눌렀을때

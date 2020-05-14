@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class NoticeActivity extends AppCompatActivity implements View.OnClickListener {
     String noticeName;
@@ -83,7 +84,6 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
     ArrayList<Image> imagesList = new ArrayList<>();
     ArrayList<String> deleteKey = new ArrayList<>();
     InputStream inputStream;
-    private Toolbar chatToolbar;
     private DatabaseReference firebaseDatabase;
     private String uid;
     private ArrayList<String> registration_ids = new ArrayList<>();
@@ -107,11 +107,9 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         layoutBtn.setVisibility(View.VISIBLE);
         imgUri = null;
         firebaseDatabase = FirebaseDatabase.getInstance().getReference();
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        uid = UserMap.getUid();
         userMap = UserMap.getInstance();
 
-
-        registration_ids = getIntent().getStringArrayListExtra("userList");
         if (getIntent().getStringExtra("modify") != null) {
             noticeName = "공지사항 수정";
             insertNotice.setText("수정완료");
@@ -124,12 +122,6 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             if (list != null) {
                 for (String s : list) {
                     imgPath.add(s);
-                    try {
-                        URL url = new URL(s);
-                        Log.d("주소", url + "");
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
                     recyclerView.setVisibility(View.VISIBLE);
                 }
             }
@@ -137,13 +129,14 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         } else if (getIntent().getStringExtra("insert") != null) {
             noticeName = "공지사항 등록";
         }
-        chatToolbar = findViewById(R.id.notice_toolbar);
+        Toolbar chatToolbar = findViewById(R.id.notice_toolbar);
         chatToolbar.setBackgroundResource(R.color.notice);
         setSupportActionBar(chatToolbar);
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle(noticeName);
-        actionBar.setDisplayHomeAsUpEnabled(true);
-
+        if (actionBar != null) {
+            actionBar.setTitle(noticeName);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
         insertNotice.setOnClickListener(this);
         insertImg.setOnClickListener(this);
 
@@ -155,14 +148,11 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                onBackPressed();
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -180,7 +170,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             case "등록완료":
                 NoticeActivity.this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                 AlertDialog.Builder builder = new AlertDialog.Builder(NoticeActivity.this);
-                View noticeView = getLayoutInflater().from(this).inflate(R.layout.notice, null);
+                View noticeView = View.inflate(NoticeActivity.this, R.layout.notice, null);
                 final TextView tx = noticeView.findViewById(R.id.progress_notice);
                 builder.setView(noticeView);
                 final AlertDialog dialog = builder.create();
@@ -199,7 +189,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             case "수정완료":
                 NoticeActivity.this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                 AlertDialog.Builder builder2 = new AlertDialog.Builder(NoticeActivity.this);
-                View noticeView2 = getLayoutInflater().from(this).inflate(R.layout.notice, null);
+                View noticeView2 = View.inflate(NoticeActivity.this, R.layout.notice, null);
                 final TextView tx2 = noticeView2.findViewById(R.id.progress_notice);
                 builder2.setView(noticeView2);
                 final AlertDialog dialog2 = builder2.create();
@@ -323,6 +313,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                                         FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
                                                     }
                                                 }
+                                                getFcmList();
                                                 Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this,
                                                         "notice", userMap.get(uid).getUserProfileImageUrl());
                                                 finish();
@@ -365,6 +356,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                     FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
                                 }
                             }
+                            getFcmList();
                             Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice", userMap.get(uid).getUserProfileImageUrl());
                             finish();
                         }
@@ -445,6 +437,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                         dialog.dismiss();
                                         NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                                         Utiles.customToast(NoticeActivity.this, "공지사항을 등록하였습니다.").show();
+                                        getFcmList();
                                         Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice", userMap.get(uid).getUserProfileImageUrl());
                                         finish();
                                     }
@@ -474,6 +467,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     dialog.dismiss();
                     NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     Utiles.customToast(NoticeActivity.this, "공지사항을 등록하였습니다.").show();
+                    getFcmList();
                     Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice", userMap.get(uid).getUserProfileImageUrl());
                     finish();
                 }
@@ -586,10 +580,22 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    private void getFcmList() {
+        Set<String> key = UserMap.getInstance().keySet();
+        for(String k : key){
+            User u = UserMap.getInstance().get(k);
+            if(u!=null){
+                if (!u.getUid().equals(uid) && !u.getPushToken().equals("")) {
+                    registration_ids.add(u.getPushToken());
+                }
+            }
+        }
+    }
+
 
     class NoticeActivityRecyclerAdapter extends RecyclerView.Adapter<NoticeActivityRecyclerAdapter.NoticeViewHolder> {
 
-        public NoticeActivityRecyclerAdapter() {
+        private NoticeActivityRecyclerAdapter() {
 
         }
 

@@ -32,6 +32,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.BuildConfig;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.util.Utiles;
 
 import java.io.File;
@@ -51,7 +52,7 @@ public class FileActivity extends AppCompatActivity {
     private String uid;
     private String toRoom;
     private Activity activity;
-
+    private long initTime;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,19 +62,19 @@ public class FileActivity extends AppCompatActivity {
         toolbar.setBackgroundResource(R.color.notice);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
-        String chatName;
+        final String chatName;
         toRoom = getIntent().getStringExtra("room");
-        if (toRoom.equals("normalChat")) {
-            chatName = "회원채팅방 파일목록";
-        } else if (toRoom.equals("officerChat")){
-            chatName = "임원채팅방 파일목록";
-        } else{
-            chatName = toRoom + " 파일목록";
-        }
+        chatName = toRoom + " 파일목록";
         actionBar.setTitle(chatName);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        LastChat lastChat = new LastChat();
+        lastChat.setChatName(toRoom);
+//        int index = UserMap.lastChat().indexOf(lastChat);
+//        LastChat lastChat1 = UserMap.lastChat().get(index);
+//        initTime = lastChat1.getExistUsers().get(uid).getInitTime();
 
         FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom)
                 .child("comments").orderByChild("type").equalTo("file").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -81,6 +82,9 @@ public class FileActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
                     ChatModel.Comment comment = item.getValue(ChatModel.Comment.class);
+                    if (comment.getTimestamp()<initTime) {
+                        continue;
+                    }
                     comment.setKey(item.getKey());
                     list.add(comment);
                 }
@@ -134,6 +138,7 @@ public class FileActivity extends AppCompatActivity {
             Map<String, Object> map = new HashMap<>();
             map.put(uid, false);
             FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("users").updateChildren(map);
+            FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).child("existUsers").child(uid).child("exitTime").setValue(System.currentTimeMillis());
         }
     }
 
@@ -184,11 +189,11 @@ public class FileActivity extends AppCompatActivity {
                             dir.mkdirs();
                             String filename = fileName[0];
                             final File file = new File(dir, filename);
-                            FirebaseStorage.getInstance().getReference().child("Document Files/" +toRoom+"/"+ list.get(position).key + "." + ext)
+                            FirebaseStorage.getInstance().getReference().child("Document Files/" + toRoom + "/" + list.get(position).key + "." + ext)
                                     .getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                    if(!activity.isDestroyed()){
+                                    if (!activity.isDestroyed()) {
                                         try {
                                             Uri uri = FileProvider.getUriForFile(FileActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
                                             Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -214,7 +219,7 @@ public class FileActivity extends AppCompatActivity {
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
-                                    if(!activity.isDestroyed()){
+                                    if (!activity.isDestroyed()) {
                                         Utiles.customToast(FileActivity.this, "파일을 받을 수 없습니다.").show();
                                     }
                                 }
@@ -223,7 +228,7 @@ public class FileActivity extends AppCompatActivity {
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        if(!activity.isDestroyed()){
+                        if (!activity.isDestroyed()) {
                             Utiles.customToast(FileActivity.this, "파일을 열 수 없습니다.").show();
                         }
                     }

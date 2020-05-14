@@ -1,11 +1,5 @@
 package com.onvit.chatapp.chat;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.app.ActivityOptions;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
@@ -20,11 +14,16 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -38,21 +37,17 @@ import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class SelectPeopleActivity extends AppCompatActivity {
     List<User> userlist;
     private ValueEventListener valueEventListener;
     private List<User> selectUserList = new ArrayList<>();
-    private Map<String, Object> messageReadUsers = new HashMap<>();
-    private Map<String, Object> existUserGroupChat = new HashMap<>();
     private PeopleFragmentRecyclerAdapter pf = new PeopleFragmentRecyclerAdapter();
     private PlusPeopleRecyclerAdapter plusPeopleRecyclerAdapter;
     private String uid;
@@ -65,11 +60,12 @@ public class SelectPeopleActivity extends AppCompatActivity {
     private RecyclerView plusRecyclerView;
     private ImageView back_arrow;
     private TextView chat_p_count;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_people);
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        uid = UserMap.getUid();
 
         back_arrow = findViewById(R.id.back_arrow);
         back_arrow.setOnClickListener(new View.OnClickListener() {
@@ -87,14 +83,16 @@ public class SelectPeopleActivity extends AppCompatActivity {
         e = findViewById(R.id.chat_name);
         allUsers = UserMap.getInstance();
         if (getIntent().getStringExtra("plus") == null) {
-            messageReadUsers.clear();
-            existUserGroupChat.clear();
             b.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     final String chatName = e.getText().toString().trim();
                     if (chatName.equals("")) {
                         Utiles.customToast(SelectPeopleActivity.this, "채팅방이름을 입력해주세요.").show();
+                        return;
+                    }
+                    if (chatName.contains(".") || chatName.contains("#") || chatName.contains("$") || chatName.contains("[") || chatName.contains("]")) {
+                        Utiles.customToast(SelectPeopleActivity.this, "'.' '#' '$' '[',']'는 사용할 수 없습니다.").show();
                         return;
                     }
                     final AlertDialog d = Utiles.createLoadingDialog(SelectPeopleActivity.this, "채팅방을 생성하는 중입니다.");
@@ -109,9 +107,6 @@ public class SelectPeopleActivity extends AppCompatActivity {
                                     return;
                                 }
                                 ChatModel chatModel = i.getValue(ChatModel.class);
-                                if (chatModel.id == 0) {
-                                    continue;
-                                }
                                 count.add(chatModel.id);
                             }
                             Collections.sort(count);
@@ -125,50 +120,38 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             LastChat lastChat = new LastChat();
                             lastChat.setChatName(chatName);
                             String message = "";
-                            Map<String, Boolean> existUser = new HashMap<>();
-                            Map<String, Integer> users = new HashMap<>();
+                            Map<String, LastChat.timeInfo> existUser = new HashMap<>();
                             for (User u : pList) {
+                                LastChat.timeInfo timeInfo = new LastChat.timeInfo();
+                                timeInfo.setUnReadCount(0);
+                                timeInfo.setInitTime(System.currentTimeMillis());
+                                timeInfo.setExitTime(System.currentTimeMillis());
                                 chatModel.users.put(u.getUid(), false);
-                                existUser.put(u.getUid(), true);
-                                users.put(u.getUid(), 0);
+                                existUser.put(u.getUid(), timeInfo);
                                 message = message + String.format("%s(%s)님, ", u.getUserName(), u.getHospital());
-                                messageReadUsers.put(u.getUid(), true);
-                                existUserGroupChat.put(u.getUid(), true);
                             }
                             final String message2 = message.substring(0, message.length() - 2) + "이 채팅방에 참여하였습니다.";
                             chatModel.id = c;
                             lastChat.setExistUsers(existUser);
-                            lastChat.setUsers(users);
                             pList.remove(allUsers.get(uid));
                             databaseReference.child("groupChat").child(chatName).setValue(chatModel);
                             databaseReference.child("lastChat").child(chatName).setValue(lastChat).addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
-                                    List<ChatModel.Comment> newComments = new ArrayList<>();
                                     List<Img> img_list = new ArrayList<>();
                                     Utiles.customToast(SelectPeopleActivity.this, "채팅방을 생성하였습니다.").show();
-
                                     ChatModel.Comment comment = new ChatModel.Comment();
                                     comment.uid = uid;
                                     comment.message = message2;
-                                    comment.timestamp = new Date().getTime();
+                                    comment.timestamp = System.currentTimeMillis();
                                     comment.type = "io";
-                                    comment.readUsers = messageReadUsers;
-                                    comment.existUser = existUserGroupChat;
+                                    comment.unReadCount = 0;
                                     databaseReference.child("groupChat").child(chatName).child("comments").push().setValue(comment);
-                                    Set<String> keySet = messageReadUsers.keySet();
-                                    for(String key : keySet){
-                                        if(!key.equals(uid)){
-                                            messageReadUsers.put(key, false);
-                                        }
-                                    }
                                     Intent intent = new Intent(SelectPeopleActivity.this, GroupMessageActivity.class);
                                     intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                                     intent.putExtra("toRoom", chatName); // 방이름
                                     intent.putExtra("chatCount", 0);// 채팅숫자
                                     intent.putParcelableArrayListExtra("userInfo", pList);
-                                    intent.putExtra("readUser", (Serializable) messageReadUsers);
-                                    intent.putExtra("existUser", (Serializable) existUserGroupChat);
                                     UserMap.getComments().clear();
                                     intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
                                     ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectPeopleActivity.this, R.anim.frombottom, R.anim.totop);
@@ -189,19 +172,8 @@ public class SelectPeopleActivity extends AppCompatActivity {
             });
         } else {
             userlist = getIntent().getParcelableArrayListExtra("userlist");
-            messageReadUsers = (Map<String, Object>) getIntent().getSerializableExtra("readUser");
-
-            for (User u : userlist) {
-                messageReadUsers.put(u.getUid(), true);
-            }
-            existUserGroupChat = (Map<String, Object>) getIntent().getSerializableExtra("existUser");
             toRoom = getIntent().getStringExtra("room");
             String chatName = getIntent().getStringExtra("room");
-            if (chatName.equals("normalChat")) {
-                chatName = "회원채팅방";
-            } else if (chatName.equals("officerChat")) {
-                chatName = "임원채팅방";
-            }
             e.setText(chatName);
             e.setFocusable(false);
             e.setClickable(false);
@@ -209,8 +181,8 @@ public class SelectPeopleActivity extends AppCompatActivity {
             b.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if(pList.size()==0){
-                        Utiles.customToast(SelectPeopleActivity.this,"초대할 인원을 선택하세요.").show();
+                    if (pList.size() == 0) {
+                        Utiles.customToast(SelectPeopleActivity.this, "초대할 인원을 선택하세요.").show();
                         return;
                     }
                     String message = "";
@@ -219,23 +191,24 @@ public class SelectPeopleActivity extends AppCompatActivity {
                     }
                     Map<String, Object> map = new HashMap<>();
                     Map<String, Object> map2 = new HashMap<>();
+                    LastChat.timeInfo timeInfo = new LastChat.timeInfo();
+                    timeInfo.setUnReadCount(0);
+                    timeInfo.setExitTime(System.currentTimeMillis());
+                    timeInfo.setInitTime(System.currentTimeMillis());
                     for (User u : pList) {
                         map.put("users/" + u.getUid(), false);
-                        map2.put("existUsers/" + u.getUid(), true);
-                        map2.put("users/" + u.getUid(), 0);
-                        messageReadUsers.put(u.getUid(), true);
-                        existUserGroupChat.put(u.getUid(), true);
+                        map2.put("existUsers/" + u.getUid(), timeInfo);
                         message = message + String.format("%s(%s)님, ", u.getUserName(), u.getHospital());
                     }
                     message = message.substring(0, message.length() - 2) + "을 초대하였습니다.";
                     databaseReference.child("groupChat").child(getIntent().getStringExtra("room")).updateChildren(map);
                     ChatModel.Comment comment = new ChatModel.Comment();
+                    Date date = new Date();
                     comment.uid = uid;
                     comment.message = message;
-                    comment.timestamp = new Date().getTime();
+                    comment.timestamp = date.getTime();
                     comment.type = "io";
-                    comment.readUsers = messageReadUsers;
-                    comment.existUser = existUserGroupChat;
+                    comment.unReadCount = 0;
                     databaseReference.child("groupChat").child(toRoom).child("comments").push().setValue(comment);
                     databaseReference.child("lastChat").child(getIntent().getStringExtra("room")).updateChildren(map2).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
@@ -283,7 +256,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
                     User user = null;
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         user = snapshot.getValue(User.class);
-                        if(user.getUid().equals(uid)){
+                        if (user.getUid().equals(uid)) {
                             continue;
                         }
                         selectUserList.add(user);
@@ -346,8 +319,8 @@ public class SelectPeopleActivity extends AppCompatActivity {
                         holder.check.setChecked(false);
                         pList.remove(selectUserList.get(position));
                         plusPeopleRecyclerAdapter.notifyDataSetChanged();
-                        chat_p_count.setText(pList.size()+"명");
-                        if(pList.size()==0){
+                        chat_p_count.setText(pList.size() + "명");
+                        if (pList.size() == 0) {
                             chat_p_count.setText("");
                             plusRecyclerView.setVisibility(View.GONE);
                         }
@@ -356,8 +329,8 @@ public class SelectPeopleActivity extends AppCompatActivity {
                         plusRecyclerView.setVisibility(View.VISIBLE);
                         pList.add(selectUserList.get(position));
                         plusPeopleRecyclerAdapter.notifyDataSetChanged();
-                        plusRecyclerView.scrollToPosition(plusPeopleRecyclerAdapter.getItemCount()-1);
-                        chat_p_count.setText(pList.size()+"명");
+                        plusRecyclerView.scrollToPosition(plusPeopleRecyclerAdapter.getItemCount() - 1);
+                        chat_p_count.setText(pList.size() + "명");
                     }
                 }
             });
@@ -368,13 +341,13 @@ public class SelectPeopleActivity extends AppCompatActivity {
                         plusRecyclerView.setVisibility(View.VISIBLE);
                         pList.add(selectUserList.get(position));
                         plusPeopleRecyclerAdapter.notifyDataSetChanged();
-                        plusRecyclerView.scrollToPosition(plusPeopleRecyclerAdapter.getItemCount()-1);
-                        chat_p_count.setText(pList.size()+"명");
+                        plusRecyclerView.scrollToPosition(plusPeopleRecyclerAdapter.getItemCount() - 1);
+                        chat_p_count.setText(pList.size() + "명");
                     } else {
                         pList.remove(selectUserList.get(position));
                         plusPeopleRecyclerAdapter.notifyDataSetChanged();
-                        chat_p_count.setText(pList.size()+"명");
-                        if(pList.size()==0){
+                        chat_p_count.setText(pList.size() + "명");
+                        if (pList.size() == 0) {
                             chat_p_count.setText("");
                             plusRecyclerView.setVisibility(View.GONE);
                         }
@@ -406,7 +379,6 @@ public class SelectPeopleActivity extends AppCompatActivity {
             }
         }
     }
-
 
 
     class PlusPeopleRecyclerAdapter extends RecyclerView.Adapter<PlusPeopleRecyclerAdapter.CustomViewHolder> {
@@ -442,8 +414,8 @@ public class SelectPeopleActivity extends AppCompatActivity {
                 public void onClick(View view) {
                     pList.remove(position);
                     notifyDataSetChanged();
-                    chat_p_count.setText(pList.size()+"명");
-                    if(pList.size()==0){
+                    chat_p_count.setText(pList.size() + "명");
+                    if (pList.size() == 0) {
                         chat_p_count.setText("");
                         plusRecyclerView.setVisibility(View.GONE);
                     }

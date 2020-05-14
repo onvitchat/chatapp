@@ -50,13 +50,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
         sendNotification(remoteMessage);
         final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseDatabase.getInstance().getReference().child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseDatabase.getInstance().getReference().child("lastChat").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 int count = 0;
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
                     LastChat chatList = item.getValue(LastChat.class);
-                    count += chatList.getUsers().get(uid);
+                    if(chatList.getExistUsers().get(uid)!=null){
+                        count += chatList.getExistUsers().get(uid).getUnReadCount();
+                    }
                 }
                 ShortcutBadger.applyCount(getApplicationContext(), count);
 
@@ -110,14 +112,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         final int[] id = new int[1];
         final String tag = remoteMessage.getData().get("tag");
-        if (tag.equals("normalChat")) {
+        if (tag.equals("notice")) {
             id[0] = 0;
-            sendFcm(remoteMessage, id[0], tag);
-        } else if (tag.equals("officerChat")) {
-            id[0] = 1;
-            sendFcm(remoteMessage, id[0], tag);
-        } else if (tag.equals("notice")) {
-            id[0] = 2;
             sendFcm(remoteMessage, id[0], tag);
         } else {
             FirebaseDatabase.getInstance().getReference().child("groupChat").child(tag).child("id").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -158,11 +154,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
 
         String chatRoomName = tag;
-        if (tag.equals("normalChat")) {
-            chatRoomName = "회원채팅방";
-        } else if (tag.equals("officerChat")) {
-            chatRoomName = "임원채팅방";
-        } else if (tag.equals("notice")) {
+        if (tag.equals("notice")) {
             chatRoomName = "공지사항";
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

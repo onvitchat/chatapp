@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class DetailFragment extends Fragment {
     Map<String, List<User>> user;
@@ -42,7 +43,8 @@ public class DetailFragment extends Fragment {
         View view = inflater.inflate(R.layout.sign_fragment, container, false);
         user = (Map<String, List<User>>) getArguments().getSerializable("detail");
         voteList = new ArrayList<>();
-        Set<String> key = user.keySet();
+        TreeMap<String, List<User>> tree = new TreeMap<>(user);
+        Set<String> key = tree.keySet();
         Iterator<String> its = key.iterator();
         while (its.hasNext()) {
             Vote v = new Vote();

@@ -5,23 +5,13 @@ import java.util.Map;
 import java.util.Objects;
 
 //마지막채팅내용 및 각자 안읽은 메세지 개수 표시.
-public class LastChat implements Comparable<LastChat>{
-    private Map<String, Integer> users = new HashMap<>();
-    private Map<String, Boolean> existUsers = new HashMap<>();
+public class LastChat implements Comparable<LastChat>, Cloneable{
+    private Map<String,timeInfo> existUsers = new HashMap<>();
     private String chatName;
     private String lastChat;
     private long timestamp;
-    private String photo;
 
     public LastChat() {
-    }
-
-    public Map<String, Boolean> getExistUsers() {
-        return existUsers;
-    }
-
-    public void setExistUsers(Map<String, Boolean> existUsers) {
-        this.existUsers = existUsers;
     }
 
     public String getChatName() {
@@ -32,12 +22,12 @@ public class LastChat implements Comparable<LastChat>{
         this.chatName = chatName;
     }
 
-    public Map<String, Integer> getUsers() {
-        return users;
+    public Map<String,timeInfo> getExistUsers() {
+        return existUsers;
     }
 
-    public void setUsers(Map<String, Integer> users) {
-        this.users = users;
+    public void setExistUsers(Map<String, timeInfo> existUsers) {
+        this.existUsers = existUsers;
     }
 
     public String getLastChat() {
@@ -56,24 +46,29 @@ public class LastChat implements Comparable<LastChat>{
         this.timestamp = timestamp;
     }
 
-    public String getPhoto() {
-        return photo;
-    }
-
-    public void setPhoto(String photo) {
-        this.photo = photo;
-    }
-
-
     @Override
     public String toString() {
         return "LastChat{" +
-                "users=" + users +
+                "existUsers=" + existUsers +
                 ", chatName='" + chatName + '\'' +
                 ", lastChat='" + lastChat + '\'' +
                 ", timestamp=" + timestamp +
-                ", photo='" + photo + '\'' +
                 '}';
+    }
+
+    @Override
+    public int compareTo(LastChat lastChat) {
+        if(this.timestamp - lastChat.getTimestamp()>0){
+            return -1;
+        }else if(this.timestamp - lastChat.getTimestamp()<0){
+            return 1;
+        }
+        return 0;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 
     @Override
@@ -89,13 +84,42 @@ public class LastChat implements Comparable<LastChat>{
         return Objects.hash(chatName);
     }
 
-    @Override
-    public int compareTo(LastChat lastChat) {
-        if(this.timestamp - lastChat.getTimestamp()>0){
-            return -1;
-        }else if(this.timestamp - lastChat.getTimestamp()<0){
-            return 1;
+    public static class timeInfo{
+        private long exitTime;
+        private long initTime;
+        private long unReadCount;
+
+        public long getInitTime() {
+            return initTime;
         }
-        return 0;
+
+        public void setInitTime(long initTime) {
+            this.initTime = initTime;
+        }
+
+        public long getExitTime() {
+            return exitTime;
+        }
+
+        public void setExitTime(long exitTime) {
+            this.exitTime = exitTime;
+        }
+
+        public long getUnReadCount() {
+            return unReadCount;
+        }
+
+        public void setUnReadCount(long unReadCount) {
+            this.unReadCount = unReadCount;
+        }
+
+        @Override
+        public String toString() {
+            return "timeInfo{" +
+                    "exitTime=" + exitTime +
+                    ", initTime=" + initTime +
+                    ", unReadCount=" + unReadCount +
+                    '}';
+        }
     }
 }

@@ -1,7 +1,6 @@
 package com.onvit.chatapp;
 
 import android.Manifest;
-import android.app.ActivityOptions;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -10,8 +9,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Parcelable;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -34,6 +31,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationItemView;
 import com.google.android.material.bottomnavigation.BottomNavigationMenuView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -42,14 +40,10 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.onvit.chatapp.ad.ShoppingFragment;
-import com.onvit.chatapp.admin.AdminActivity;
 import com.onvit.chatapp.admin.SetupFragment;
 import com.onvit.chatapp.chat.ChatFragment;
-import com.onvit.chatapp.chat.GroupMessageActivity;
 import com.onvit.chatapp.chat.SelectGroupChatActivity;
 import com.onvit.chatapp.contact.PeopleFragment;
-import com.onvit.chatapp.model.ChatModel;
-import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.notice.NoticeFragment;
@@ -57,40 +51,27 @@ import com.onvit.chatapp.util.PreferenceManager;
 import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
-import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     private final static int PERMISSION_REQUEST_CODE = 1000;
     private final int firstReadChatCount = Utiles.firstReadChatCount;
     BottomNavigationMenuView bottomNavigationMenuView;
     BottomNavigationView bottomNavigationView;
-    private FirebaseAuth firebaseAuth;
-    private String text = null;
-    private Uri uri = null;
     private User user;
     private String uid;
     private ValueEventListener valueEventListener;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-    private Map<String, User> userMap;
-    private List<User> userList;
-    private List<ChatModel.Comment> newComments = new ArrayList<>();
-    private List<Img> img_list = new ArrayList<>();
-    private AlertDialog dialog;
-    private ArrayList<User> userInfoList = new ArrayList<>();
-    private Map<String, Object> messageReadUsers = new HashMap<>();
-    private Map<String, Object> existUserGroupChat = new HashMap<>();
+    private Fragment chatFragment, peopleFragment, noticeFragment, adFragment, setFragment;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        firebaseAuth = FirebaseAuth.getInstance();
+        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
         //유저없으면 로그인 페이지로
         if (firebaseAuth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
@@ -98,45 +79,68 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
-
-        userMap = UserMap.getInstance();
-        UserMap.getUserMap();
-        userList = UserMap.getUser();
-        UserMap.getUserList();
-
         user = getIntent().getParcelableExtra("user");
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        //uid설정
+        uid = UserMap.getUid();
+
+        //uid없으면 받아와서 설정.
+        if(uid==null){
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if(user!=null){
+                uid = user.getUid();
+                UserMap.setUid(uid);
+            }else{
+                Utiles.customToast(MainActivity.this, "인증오류").show();
+                UserMap.clearApp();
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                intent.putExtra("logOut", "logOut");
+                PreferenceManager.clear(MainActivity.this);
+                startActivity(intent);
+                finish();
+            }
+        }
+
+        //개인정보 저장.
         PreferenceManager.setString(MainActivity.this, "name", user.getUserName());
         PreferenceManager.setString(MainActivity.this, "hospital", user.getHospital());
         PreferenceManager.setString(MainActivity.this, "phone", user.getTel());
         PreferenceManager.setString(MainActivity.this, "uid", user.getUid());
 
-        final Fragment notice = new NoticeFragment();
-        final Fragment people = new PeopleFragment();
-        final Fragment shop = new ShoppingFragment();
+
+        noticeFragment = new NoticeFragment();
+        chatFragment = new ChatFragment();
+        peopleFragment = new PeopleFragment();
+        adFragment = new ShoppingFragment();
+        setFragment = new SetupFragment();
+
         getIntent().addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         bottomNavigationView = findViewById(R.id.mainActivity_bottomNavigationView);
-        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, notice).commitAllowingStateLoss();
+        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new NoticeFragment()).commitAllowingStateLoss();
 
+
+        //바텀네비게이션에 메뉴를 붙임.
         bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
                     case R.id.action_notice:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, notice).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, noticeFragment).commitAllowingStateLoss();
+                        bottomNavigationMenuView.getChildAt(0).setEnabled(false);
                         return true;
                     case R.id.action_people:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, people).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, peopleFragment).commitAllowingStateLoss();
+                        bottomNavigationMenuView.getChildAt(1).setEnabled(false);
                         return true;
                     case R.id.action_chat:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, chatFragment).commitAllowingStateLoss();
                         bottomNavigationMenuView.getChildAt(2).setEnabled(false);
                         return true;
                     case R.id.action_account:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, shop).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, adFragment).commitAllowingStateLoss();
+                        bottomNavigationMenuView.getChildAt(3).setEnabled(false);
                         return true;
                     case R.id.action_setup:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new SetupFragment(user)).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, setFragment).commitAllowingStateLoss();
                         bottomNavigationMenuView.getChildAt(4).setEnabled(false);
                         return true;
 
@@ -144,45 +148,25 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+        bottomNavigationMenuView = (BottomNavigationMenuView) bottomNavigationView.getChildAt(0);
+
+
+        //공유 텍스트 or 이미지 처리.
         if (getIntent().getStringExtra("text") != null || getIntent().getParcelableExtra("shareUri") != null) {
-            text = getIntent().getStringExtra("text");
-            uri = getIntent().getParcelableExtra("shareUri");
+            String text = getIntent().getStringExtra("text");
+            Uri uri = getIntent().getParcelableExtra("shareUri");
             String filePath = getIntent().getStringExtra("filePath");
             Intent intent1 = new Intent(MainActivity.this, SelectGroupChatActivity.class);
             intent1.putExtra("text", text);
             intent1.putExtra("shareUri", uri);
             intent1.putExtra("filePath", filePath);
+            bottomNavigationView.setSelectedItemId(R.id.action_chat);
             startActivity(intent1);
         }
-        bottomNavigationMenuView = (BottomNavigationMenuView) bottomNavigationView.getChildAt(0);
+
         requestPermission();
         passPushTokenToServer();
-        deleteFile();
 
-    }
-
-    private void deleteFile() {
-        File path = Environment.getExternalStorageDirectory();
-        File dir = new File(path + "/KCHA");
-        if (dir.exists()) {
-            String p = dir.getAbsolutePath();
-            setDirEmpty(p);
-        }
-    }
-
-    public void setDirEmpty(String dirName) {
-        File dir = new File(dirName);
-        File[] childFileList = dir.listFiles();
-        if (dir.exists()) {
-            for (File childFile : childFileList) {
-                if (childFile.isDirectory()) {
-                    setDirEmpty(childFile.getAbsolutePath()); //하위 디렉토리
-                } else {
-                    childFile.delete(); //하위 파일
-                }
-            }
-            dir.delete();
-        }
     }
 
     private void requestPermission() {
@@ -281,52 +265,55 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    void passPushTokenToServer() {
+        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(MainActivity.this, new OnSuccessListener<InstanceIdResult>() {
+            @Override
+            public void onSuccess(InstanceIdResult instanceIdResult) {
+                String token = instanceIdResult.getToken();
+                user.setPushToken(token);
+                FirebaseDatabase.getInstance().getReference().child("Users").child(uid).setValue(user);
+            }
+        });
+
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         requestNotificationPolicyAccess();
+
+        //fcm눌러서 들어왓을때.
         if (getIntent().getStringExtra("tag") != null) {
             if (!getIntent().getStringExtra("tag").equals("notice")) {
-                final String toRoom = getIntent().getStringExtra("tag");
-                getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
                 bottomNavigationView.setSelectedItemId(R.id.action_chat);
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                View noticeView = getLayoutInflater().from(MainActivity.this).inflate(R.layout.access, null);
-                builder.setView(noticeView);
-                dialog = builder.create();
-                dialog.setCanceledOnTouchOutside(false);
-                dialog.setCancelable(false);
-                dialog.show();
-                UserMap.clearComments();
-                getMessage(toRoom);
+            }else{
+                getIntent().removeExtra("tag");
             }
         }
 
 
+        //바텀네이게이션 채팅방 메뉴에 안읽은 메세지 개수 표시.
         View v = bottomNavigationMenuView.getChildAt(2);
         BottomNavigationItemView itemView = (BottomNavigationItemView) v;
         final View badge = LayoutInflater.from(this).inflate(R.layout.notification_badge, itemView, true);
         final TextView badgeView = badge.findViewById(R.id.badge);
-
         valueEventListener = new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) { // 해당되는 chatrooms들의 키값들이 넘어옴.
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d("뱃지", "dd");
                 int count = 0;
-                for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
+                for (final DataSnapshot item : dataSnapshot.getChildren()) {
                     final LastChat lastChat = item.getValue(LastChat.class);
-
-                    if (lastChat.getUsers() == null) {
-                        return;
-                    }
-                    if (lastChat.getUsers().get(uid) == null) {
-                        count += 0;
+                    if (lastChat.getExistUsers().get(uid) != null) {
+                        count += lastChat.getExistUsers().get(uid).getUnReadCount();
+                        Log.d("뱃지",  count+"dd");
                     } else {
-                        count += Integer.parseInt(lastChat.getUsers().get(uid) + "");
+                        count += 0;
                     }
                 }
                 if (count > 0) {
                     String c = count + "";
+                    Log.d("뱃지",  c);
                     badgeView.setText(c);
                     badgeView.setVisibility(View.VISIBLE);
                 } else {
@@ -339,21 +326,8 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
-        databaseReference.child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addValueEventListener(valueEventListener);
+        databaseReference.child("lastChat").addValueEventListener(valueEventListener);
 
-
-    }
-
-    void passPushTokenToServer() {
-        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(MainActivity.this, new OnSuccessListener<InstanceIdResult>() {
-            @Override
-            public void onSuccess(InstanceIdResult instanceIdResult) {
-                String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                String token = instanceIdResult.getToken();
-                user.setPushToken(token);
-                FirebaseDatabase.getInstance().getReference().child("Users").child(uid).setValue(user);
-            }
-        });
 
     }
 
@@ -361,12 +335,6 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.main_option_menu, menu);
-//        if (user.getHospital().equals("개발자")) {
-//            menu.findItem(R.id.admin).setVisible(true);
-//        }
-//        if (user.getHospital().equals("개발자")) {
-//            menu.findItem(R.id.invite).setVisible(true);
-//        }
         return true;
     }
 
@@ -382,7 +350,6 @@ public class MainActivity extends AppCompatActivity {
             builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     Map<String, Object> map = new HashMap<>();
                     map.put("pushToken", "");
                     FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
@@ -398,9 +365,6 @@ public class MainActivity extends AppCompatActivity {
             AlertDialog a = builder.create();
             a.show();
 
-        } else if (item.getItemId() == R.id.admin) {
-            Intent intent = new Intent(MainActivity.this, AdminActivity.class);
-            startActivity(intent);
         }
 
         return true;
@@ -441,107 +405,5 @@ public class MainActivity extends AppCompatActivity {
             return notificationManager.isNotificationPolicyAccessGranted();
         }
         return true;
-    }
-
-    void getMessage(final String room) {
-        databaseReference.child("groupChat").child(room).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                userInfoList.clear();
-                messageReadUsers.clear();
-                existUserGroupChat.clear();
-                for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    messageReadUsers.put(item.getKey(), item.getValue());
-                    existUserGroupChat.put(item.getKey(), true);
-                    if (!item.getKey().equals(uid)) {
-                        userInfoList.add(userMap.get(item.getKey()));
-                    }
-                }
-                messageReadUsers.put(uid, true);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-        databaseReference.child("groupChat").child(room).child("comments").orderByChild("readUsers/" + uid).equalTo(false)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        Map<String, Object> map = new HashMap<>();
-                        if (dataSnapshot.getChildrenCount() > 0) {
-                            for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                map.put(Objects.requireNonNull(item.getKey()) + "/readUsers/" + uid, true);
-                            }
-                            databaseReference.child("groupChat").child(room).child("comments").updateChildren(map);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-        databaseReference.child("groupChat").child(room).child("comments").orderByChild("existUser/" + uid).equalTo(true).limitToLast(firstReadChatCount)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        for (DataSnapshot i : dataSnapshot.getChildren()) {
-                            ChatModel.Comment c = i.getValue(ChatModel.Comment.class);
-                            c.readUsers.put(uid, true);
-                            c.setKey(i.getKey());
-                            newComments.add(c);
-                            Log.d("채팅", c.toString());
-                            if (c.getType().equals("img")) {
-                                Img img = new Img();
-                                if (userMap.get(c.getUid()) == null) {
-                                    img.setName("(알수없음)");
-                                } else {
-                                    img.setName(userMap.get(c.getUid()).getUserName());
-                                }
-                                String uri;
-                                if (c.message.startsWith("http")) {
-                                    uri = c.message;
-                                } else {
-                                    int firstIndex = c.message.indexOf("/");
-                                    int secondIndex = c.message.indexOf("/", firstIndex + 1);
-                                    uri = c.message.substring(secondIndex + 1);
-                                }
-                                img.setUri(uri);
-                                String time = String.valueOf((long) c.getTimestamp());
-                                img.setTime(time);
-                                img_list.add(img);
-                            }
-                        }
-                        Map<String, Object> map = new HashMap<>();
-                        map.put(uid, 0);
-                        databaseReference.child("lastChat").child(room).child("users").updateChildren(map);
-                        goChatRoom(room);
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-    }
-
-    private void goChatRoom(String toRoom) {
-        Intent intent = null;
-        intent = new Intent(MainActivity.this, GroupMessageActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("toRoom", toRoom); // 방이름
-        intent.putExtra("chatCount", newComments.size());// 채팅숫자
-        intent.putParcelableArrayListExtra("userInfo", userInfoList);
-        intent.putExtra("readUser", (Serializable) messageReadUsers);
-        intent.putExtra("existUser", (Serializable) existUserGroupChat);
-        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
-        UserMap.setComments(newComments);
-        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(MainActivity.this, R.anim.frombottom, R.anim.totop);
-        getIntent().removeExtra("tag");
-        dialog.dismiss();
-        startActivity(intent, activityOptions.toBundle());
-
     }
 }

@@ -33,6 +33,8 @@ import okhttp3.Response;
 
 public class Utiles {
     public static final int firstReadChatCount = 200;
+    private static long returnTime;
+
     public static AlertDialog createLoadingDialog(Context context, String text) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View view = LayoutInflater.from(context).inflate(R.layout.loading, null);
@@ -68,7 +70,6 @@ public class Utiles {
         notificationModel.delay_while_idle = false;
         notificationModel.time_to_live = 0;
 
-        Log.d("fcmlog", notificationModel.toString());
         RequestBody requestBody = RequestBody.create(gson.toJson(notificationModel), MediaType.parse("application/json; charset=utf8"));
         Request request = new Request.Builder().header("Content-Type", "apllication/json")
                 .addHeader("Authorization", "key=" + PreferenceManager.getString(context, "serverKey") + "")
@@ -88,16 +89,24 @@ public class Utiles {
             }
         });
     }
-    public static Toast customToast(Activity context, String text){
+
+    public static Toast customToast(Activity context, String text) {
         Toast toast = new Toast(context);
-        View custom = context.getLayoutInflater().inflate(R.layout.custom_toast,null);
+        View custom = context.getLayoutInflater().inflate(R.layout.custom_toast, null);
         TextView textView = custom.findViewById(R.id.message_toast);
         textView.setText(text);
-        ImageView imageView = custom.findViewById(R.id.logo_toast);
-        Glide.with(context).load(R.drawable.logo_high).apply(new RequestOptions().centerCrop()).into(imageView);
         toast.setView(custom);
         toast.setDuration(Toast.LENGTH_SHORT);
-        toast.setGravity(Gravity.CENTER,0,0);
+        toast.setGravity(Gravity.CENTER, 0, 0);
         return toast;
+    }
+
+    public static boolean blockDoubleClick(){
+        if(System.currentTimeMillis()-returnTime<1000){
+            return true;
+        }else{
+            returnTime = System.currentTimeMillis();
+            return false;
+        }
     }
 }

@@ -27,6 +27,7 @@ import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.util.UserMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,7 +44,7 @@ public class ImgActivity extends AppCompatActivity {
     private Map<String, User> users = new HashMap<>();
     private RecyclerView recyclerView;
     private ImgRecyclerAdapter imgRecyclerAdapter;
-
+    private long initTime;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,17 +56,11 @@ public class ImgActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         String chatName;
         toRoom = getIntent().getStringExtra("room");
-        if (toRoom.equals("normalChat")) {
-            chatName = "회원채팅방 이미지목록";
-        } else if (toRoom.equals("officerChat")) {
-            chatName = "임원채팅방 이미지목록";
-        } else {
-            chatName = toRoom + " 이미지목록";
-        }
+        chatName = toRoom + " 이미지목록";
         actionBar.setTitle(chatName);
         actionBar.setDisplayHomeAsUpEnabled(true);
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        img_list = new ArrayList<>();
+        uid = UserMap.getUid();
+        img_list = getIntent().getParcelableArrayListExtra("imgList");;
         userlist = getIntent().getParcelableArrayListExtra("userlist");
 
         for (User u : userlist) {
@@ -75,54 +70,11 @@ public class ImgActivity extends AppCompatActivity {
         if (img_list == null) {
             img_list = new ArrayList<>();
         }
-
-        FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments").orderByChild("existUser/" + uid).equalTo(true)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        img_list.clear();
-                        for (DataSnapshot d : dataSnapshot.getChildren()) {
-                            ChatModel.Comment comment_modify = d.getValue(ChatModel.Comment.class);
-                            comment_modify.setKey(dataSnapshot.getKey());
-                            //화면에 뿌리는 코멘트.
-
-                            if (comment_modify.getType().equals("img")) {
-                                Img i = new Img();
-
-                                if (users.get(comment_modify.getUid()) == null) {
-                                    i.setName("(알수없음)");
-                                } else {
-                                    i.setName(users.get(comment_modify.getUid()).getUserName());
-                                }
-
-                                String uri;
-                                if (comment_modify.message.startsWith("http")) {
-                                    uri = comment_modify.message;
-                                } else {
-                                    int firstIndex = comment_modify.message.indexOf("/");
-                                    int secondIndex = comment_modify.message.indexOf("/", firstIndex + 1);
-                                    uri = comment_modify.message.substring(secondIndex + 1);
-                                }
-                                i.setUri(uri);
-                                String time = String.valueOf((long) comment_modify.getTimestamp());
-                                i.setTime(time);
-                                img_list.add(i);
-                            }
-                        }
-                        Collections.reverse(img_list);
-                        recyclerView = findViewById(R.id.img_recycler);
-                        recyclerView.setLayoutManager(new GridLayoutManager(ImgActivity.this, 3));
-                        imgRecyclerAdapter = new ImgRecyclerAdapter();
-                        recyclerView.setAdapter(imgRecyclerAdapter);
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-
-
+        Collections.reverse(img_list);
+        recyclerView = findViewById(R.id.img_recycler);
+        recyclerView.setLayoutManager(new GridLayoutManager(ImgActivity.this, 3));
+        imgRecyclerAdapter = new ImgRecyclerAdapter();
+        recyclerView.setAdapter(imgRecyclerAdapter);
     }
 
     //뒤로가기 눌렀을때
@@ -160,6 +112,7 @@ public class ImgActivity extends AppCompatActivity {
             Map<String, Object> map = new HashMap<>();
             map.put(uid, false);
             FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("users").updateChildren(map);
+            FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).child("existUsers").child(uid).child("exitTime").setValue(System.currentTimeMillis());
         }
     }
 

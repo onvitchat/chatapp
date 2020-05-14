@@ -1,5 +1,7 @@
 package com.onvit.chatapp.util;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -22,7 +24,78 @@ public class UserMap {
     private static List<User> userList;
     private static List<ChatModel.Comment> newComments;
     private static ValueEventListener valueEventListener;
-    private static ChildEventListener childEventListener;
+    private static String uid;
+    private static long init;
+
+    public static void setInit(long i){
+        init = i;
+    }
+
+    public static long getInit(){
+        return init;
+    }
+
+    // ===================내 uid =======================//
+    public static String getUid() {
+        return uid;
+    }
+
+    public static void setUid(String uid2) {
+        uid = uid2;
+    }
+    // ================================================//
+    // ================ app 전체 사용자 정보 =================//
+    public static void getUserMap() {
+        final long startTime;
+
+        startTime = System.currentTimeMillis();
+        if (userMap == null) {
+            userMap = new HashMap<>();
+        }
+        if (userList == null) {
+            userList = new ArrayList<>();
+        }
+        //이름순으로 받아옴.
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                userList.clear();
+                User my = new User();
+                for (DataSnapshot dataSnapshot1 : dataSnapshot.getChildren()) {
+                    User user = dataSnapshot1.getValue(User.class);
+                    userMap.put(dataSnapshot1.getKey(), user);
+                    if(user.getUid().equals(uid)){
+                        my = user;
+                    }else{
+                        userList.add(user);
+                    }
+                }
+                userList.add(0,my);
+                long endTime = System.currentTimeMillis();
+
+                Log.d("유저시간차이", (endTime - startTime) / 1000 + "초");
+                Log.d("유저시간차이", (endTime - startTime) + "초");
+                Log.d("유저시간차이", userMap.size() + "명");
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        FirebaseDatabase.getInstance().getReference().child("Users").orderByChild("userName").addValueEventListener(valueEventListener);
+    }
+    public static HashMap<String, User> getInstance() {
+        return userMap;
+    }
+
+    public static List<User> getUserList() {
+        return userList;
+    }
+
+    // ================================================================================================ //
+
+
+    // ==============================채팅방 진입시 해당 채팅방 내용 =================================== //
 
     public static void clearComments() {
         if (newComments != null) {
@@ -38,96 +111,24 @@ public class UserMap {
         newComments = comments;
     }
 
-    public static HashMap<String, User> getInstance() {
-        if (userMap == null) {
-            userMap = new HashMap<>();
-        }
-        return userMap;
-    }
+    // ====================================================================================== //
 
-    public static List<User> getUser() {
-        if (userList == null) {
-            userList = new ArrayList<>();
-        }
-        return userList;
-    }
-
-    public static void getUserMap() {
-        childEventListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                User user = dataSnapshot.getValue(User.class);
-                userMap.put(dataSnapshot.getKey(), user);
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                User user = dataSnapshot.getValue(User.class);
-                userMap.put(dataSnapshot.getKey(), user);
-
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        };
-        FirebaseDatabase.getInstance().getReference().child("Users").addChildEventListener(childEventListener);
-    }
-
-    public static void getUserList() {
-        valueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                // 가입한 유저들의 정보를 가지고옴
-                if(userList!=null){
-                    userList.clear();
-                }
-                User user = null;
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    if (FirebaseAuth.getInstance().getCurrentUser().getUid().equals(snapshot.getValue(User.class).getUid())) {
-                        user = snapshot.getValue(User.class);
-                        continue;
-                    }
-                    userList.add(snapshot.getValue(User.class));
-                }
-                // 유저들의 정보를 가나순으로 정렬하고 자신의 정보는 첫번째에 넣음.
-                Collections.sort(userList);
-                userList.add(0, user);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-            }
-        };
-        FirebaseDatabase.getInstance().getReference().child("Users").addValueEventListener(valueEventListener);
-    }
-
-    public static void clearApp(){
-        if(valueEventListener!=null){
+    // =====================================모든 정보 초기화 =========================================== //
+    public static void clearApp() {
+        if (valueEventListener != null) {
             FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(valueEventListener);
         }
-        if(childEventListener!=null){
-            FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(childEventListener);
-        }
-        if(userList!=null){
+        if (userList != null) {
             userList.clear();
         }
-        if(userMap!=null){
+        if (userMap != null) {
             userMap.clear();
         }
-        if(newComments!=null){
+        if (newComments != null) {
             newComments.clear();
+        }
+        if (uid != null) {
+            uid = null;
         }
     }
 }

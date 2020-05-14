@@ -11,7 +11,6 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.WindowManager;
@@ -24,35 +23,39 @@ import androidx.core.content.FileProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.model.Vote;
-import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 public class SplashActivity extends AppCompatActivity {
     private FirebaseRemoteConfig mFirebaseRemoteConfig;
     private FirebaseAuth firebaseAuth;
-    private ValueEventListener valueEventListener;
     private String text = null;
     private Uri uri = null;
     private String filePath;
@@ -64,14 +67,14 @@ public class SplashActivity extends AppCompatActivity {
         setContentView(R.layout.activity_splash);
         getIntent().addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
         firebaseAuth = FirebaseAuth.getInstance();
-//        firebaseAuth.signOut();
         mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
         FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
                 .setMinimumFetchIntervalInSeconds(0) // 한시간에 최대 한번 요청할 수 있음. 한시간의 캐싱타임을 가짐.
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
+//        changDB();
+        deleteChat(90);
     }
 
     @Override
@@ -137,10 +140,24 @@ public class SplashActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         long version = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            version = p.getLongVersionCode();
+        if (p != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                version = p.getLongVersionCode();
+            } else {
+                version = p.versionCode;
+            }
         } else {
-            version = p.versionCode;
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("버전정보를 받아올 수 없습니다.").setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    finish();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.setCancelable(false);
+            dialog.show();
         }
         Log.d("버전코드", version + "");
         if (versionCode != version) {
@@ -169,7 +186,6 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void createNotificationChannel() {
-
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -181,7 +197,6 @@ public class SplashActivity extends AppCompatActivity {
                     notificationManager.deleteNotificationChannel(getString(R.string.vibrate));
                 }
             }
-
             NotificationChannel channel = new NotificationChannel(getString(R.string.vibrate2),
                     "진동",
                     NotificationManager.IMPORTANCE_HIGH);
@@ -203,45 +218,31 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void initSplash() {
+        //앱정보 초기화
         UserMap.clearApp();
-        if (PreferenceManager.getString(SplashActivity.this, "name") == null || PreferenceManager.getString(SplashActivity.this, "name").equals("")
-                || FirebaseAuth.getInstance().getCurrentUser() == null) {
+        //로그인정보 없으면 로그인페이지로
+        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+        if (firebaseUser == null) {
             firebaseAuth.signOut();
             Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
             startActivity(intent);
             finish();
+            //로그인정보 있으면 상황에 따라 해당페이지로
         } else {
-            valueEventListener = new ValueEventListener() { // Users데이터의 변화가 일어날때마다 콜백으로 호출됨.
+            final String uid = firebaseUser.getUid();
+            Log.d("아이디", uid);
+            FirebaseDatabase.getInstance().getReference().child("Users").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    // 가입한 유저들의 정보를 가지고옴.
-                    User user = null;
-                    String key = null;
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        if (FirebaseAuth.getInstance().getCurrentUser().getUid().equals(snapshot.getValue(User.class).getUid())) {
-                            user = snapshot.getValue(User.class);
-                            key = snapshot.getKey();
-                        }
-                        if (snapshot.getValue(User.class).getUserName() == null) {
-                            Map<String, Object> map = new HashMap<>();
-                            map.put("Users/" + snapshot.getKey(), null);
-                            map.put("groupChat/normalChat/users/" + snapshot.getKey(), null);
-                            map.put("groupChat/officerChat/users/" + snapshot.getKey(), null);
-                            map.put("lastChat/normalChat/existUsers/" + snapshot.getKey(), null);
-                            map.put("lastChat/officerChat/existUsers/" + snapshot.getKey(), null);
-                            map.put("lastChat/normalChat/users/" + snapshot.getKey(), null);
-                            map.put("lastChat/officerChat/users/" + snapshot.getKey(), null);
-                            FirebaseDatabase.getInstance().getReference().updateChildren(map);
-                        }
-
-                    }
-
+                    User user = dataSnapshot.getValue(User.class);
                     if (user == null) {
                         firebaseAuth.signOut();
                         Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
                         startActivity(intent);
                         finish();
                     } else {
+                        UserMap.setUid(uid);
+                        UserMap.getUserMap();
                         Intent intent = getIntent();
                         String action = intent.getAction();
                         String type = intent.getType();
@@ -276,15 +277,12 @@ public class SplashActivity extends AppCompatActivity {
                             finish();
 
                         } else {
-//                            checkVote();
                             Intent intent2 = new Intent(SplashActivity.this, MainActivity.class);
                             intent2.putExtra("user", user);
                             intent2.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent2);
                             finish();
                         }
-
-
                     }
                 }
 
@@ -292,108 +290,8 @@ public class SplashActivity extends AppCompatActivity {
                 public void onCancelled(@NonNull DatabaseError databaseError) {
 
                 }
-            };
-            FirebaseDatabase.getInstance().getReference().child("Users").addValueEventListener(valueEventListener);
+            });
         }
-    }
-
-    private void checkVote() {
-        FirebaseDatabase.getInstance().getReference().child("Vote").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for(DataSnapshot v : dataSnapshot.getChildren()){
-                    final String key = v.getKey();
-                    FirebaseDatabase.getInstance().getReference().child("Vote").child(key).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            for(DataSnapshot v : dataSnapshot.getChildren()){
-                                final Vote vote = v.getValue(Vote.class);
-                                final String key2 = v.getKey();
-                                long cTime = new Date().getTime();
-                                if(cTime-vote.getDeadline()>=0){
-                                    if(vote.getEnd()==null){
-                                        Map<String, Object> map = new HashMap<>();
-                                        final Map<String, Object> readUser = new HashMap<>();
-                                        final Map<String, Object> existUser = new HashMap<>();
-                                        final List<String> list = new ArrayList<>();
-                                        vote.setEnd("Y");
-                                        map.put(key2, vote);
-                                        FirebaseDatabase.getInstance().getReference().child("Vote").child(key).updateChildren(map);
-                                        FirebaseDatabase.getInstance().getReference().child("groupChat").child(key).addListenerForSingleValueEvent(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                ChatModel chatModel = dataSnapshot.getValue(ChatModel.class);
-                                                Set<String> set = chatModel.users.keySet();
-                                                for(String s : set){
-                                                    readUser.put(s,chatModel.users.get(s));
-                                                    existUser.put(s,true);
-                                                    if(chatModel.users.get(s)==true){
-                                                        continue;
-                                                    }
-                                                    list.add(s);
-                                                }
-                                                final ChatModel.Comment comment = new ChatModel.Comment();
-                                                comment.uid = vote.getRegistrant();
-                                                comment.message = vote.getTitle()+ "!@#!@#voteResult" + key2;
-                                                comment.timestamp = new Date().getTime();
-                                                comment.type = "vote";
-                                                comment.readUsers = readUser;
-                                                comment.existUser = existUser;
-                                                FirebaseDatabase.getInstance().getReference().child("groupChat")
-                                                        .child(key).child("comments").push().setValue(comment);
-                                                FirebaseDatabase.getInstance().getReference().child("lastChat").child(key).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
-                                                    @Override
-                                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                        Map<String, Object> unreadUser = (Map<String, Object>) dataSnapshot.getValue();
-                                                        Map<String, Object> read = comment.readUsers; // 읽은사람구분
-                                                        Set<String> keys = read.keySet();
-                                                        Iterator<String> it = keys.iterator();
-                                                        while (it.hasNext()) {
-                                                            String key1 = it.next();
-                                                            Object value = read.get(key1);
-                                                            if ((Boolean) value == false) {
-                                                                //메세지 안읽었으면 기존꺼에서 1추가함.
-                                                                unreadUser.put(key1, ((int) (long) unreadUser.get(key1)) + 1);
-                                                            }
-                                                        }
-                                                        Map<String, Object> lastMap = new HashMap<>();
-                                                        lastMap.put("lastChat", "투표마감 : " + comment.message.split("!@#!@#")[0]);
-                                                        lastMap.put("timestamp", comment.timestamp);
-                                                        lastMap.put("users", unreadUser);
-                                                        FirebaseDatabase.getInstance().getReference().child("lastChat").child(key).updateChildren(lastMap); // 마지막 메세지 표시
-                                                    }
-
-                                                    @Override
-                                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                                    }
-                                                });
-                                            }
-
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                            }
-                                        });
-                                    }
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                        }
-                    });
-
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
     }
 
     private Uri getConvertUri(Uri uri) {
@@ -419,11 +317,138 @@ public class SplashActivity extends AppCompatActivity {
         filePath = absolutePath;
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (valueEventListener != null) {
-            FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(valueEventListener);
+
+    //디비테이블 바꾸는거 최초에 한 번 내폰으로 실행하고 지움.
+    private void changDB() {
+        FirebaseDatabase.getInstance().getReference().child("groupChat").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Map<String, Object> map = new HashMap<>();
+                for (DataSnapshot d : dataSnapshot.getChildren()) {
+                    String chatName;
+                    ChatModel chatModel = d.getValue(ChatModel.class);
+                    if (d.getKey().equals("normalChat")) {
+                        chatName = "회원채팅방";
+                        chatModel.id = 1;
+                    } else if (d.getKey().equals("officerChat")) {
+                        chatName = "임원채팅방";
+                        chatModel.id = 2;
+                    } else {
+                        chatName = d.getKey();
+                    }
+                    Map<String, ChatModel.Comment> c = chatModel.comments;
+                    Set<String> key = c.keySet();
+                    for (String k : key) {
+                        c.get(k).setUnReadCount(0);
+                    }
+                    map.put(chatName, chatModel);
+                    map.put("normalChat", null);
+                    map.put("officerChat", null);
+                }
+                FirebaseDatabase.getInstance().getReference().child("groupChat").updateChildren(map);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+        FirebaseDatabase.getInstance().getReference().child("lastChat").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
+                Set<String> key = map.keySet();
+                for (String k : key) {
+                    Map<String, Object> m = (Map<String, Object>) map.get(k);
+                    Map<String, Object> m2 = (Map<String, Object>) m.get("existUsers");
+                    m.put("users", null);
+                    Set<String> ke2 = m2.keySet();
+                    ArrayList<String> key2 = new ArrayList<>(ke2);
+                    for (String k2 : key2) {
+                        LastChat.timeInfo timeInfo = new LastChat.timeInfo();
+                        long time = 1579231775390l;
+                        timeInfo.setInitTime(time);
+                        timeInfo.setExitTime(System.currentTimeMillis());
+                        timeInfo.setUnReadCount(0);
+                        m2.put(k2, timeInfo);
+                    }
+                }
+                Map<String, Object> m = (Map<String, Object>) map.get("normalChat");
+                Map<String, Object> m2 = (Map<String, Object>) map.get("officerChat");
+                if (m != null && m2 != null) {
+                    map.put("회원채팅방", m);
+                    map.put("임원채팅방", m2);
+                }
+                map.put("normalChat", null);
+                map.put("officerChat", null);
+                FirebaseDatabase.getInstance().getReference().child("lastChat").updateChildren(map);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+    private void deleteChat(int i) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd", Locale.KOREA);
+        final Date date = new Date();
+        if (sdf.format(date).equals("01")) {
+            long twoM = (24L * 60 * 60 * 1000 * i);
+            final long oldDate = date.getTime() - twoM;
+            //두달지난거 삭제함.
+            FirebaseDatabase.getInstance().getReference().child("groupChat").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    for (DataSnapshot i : dataSnapshot.getChildren()) {
+                        final String chatName = i.getKey();
+                        if (chatName != null) {
+                            FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments")
+                                    .orderByChild("timestamp")
+                                    .endAt(oldDate).addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                    Map<String, Object> map = new HashMap<>();
+                                    List<String> deleteKey = new ArrayList<>();
+                                    List<String> deleteKey2 = new ArrayList<>();
+                                    for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                        map.put(item.getKey(), null);
+                                        ChatModel.Comment comment = item.getValue(ChatModel.Comment.class);
+
+                                        if (comment.getType().equals("img")) {
+                                            deleteKey.add(item.getKey());
+                                        }
+                                        if (comment.getType().equals("file")) {
+                                            int a = comment.getMessage().lastIndexOf("https");
+                                            int b = comment.getMessage().substring(0, a).lastIndexOf(".");
+                                            String ext = comment.getMessage().substring(0, a).substring(b + 1);
+                                            deleteKey2.add(item.getKey() + "." + ext);
+                                        }
+                                    }
+                                    for (String d : deleteKey) {
+                                        FirebaseStorage.getInstance().getReference().child("Image Files").child(chatName).child(d).delete();
+                                    }
+                                    for (String d : deleteKey2) {
+                                        FirebaseStorage.getInstance().getReference().child("Document Files").child(chatName).child(d).delete();
+                                    }
+                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments").updateChildren(map);
+                                    FirebaseDatabase.getInstance().getReference().child("Vote").child(chatName).updateChildren(map);
+                                    Log.d(chatName + "지워진 채팅 수", dataSnapshot.getChildrenCount() + "개");
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+                                }
+                            });
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
         }
     }
 }
