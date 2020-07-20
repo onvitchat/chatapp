@@ -1,35 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/signupActivity_linearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     android:gravity="center"
     android:orientation="vertical"
-    tools:context=".SignUpActivity"
-    android:background="@color/white">
+    tools:context=".SignUpActivity">
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.9"
-        android:layout_marginTop="20dp">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical">
-        <ImageView
-            android:id="@+id/signupActivity_imageview_profile"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_marginBottom="10dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/standard_profile" />
-        <TextView
-            android:layout_width="wrap_content"
+        android:layout_weight="0.9">
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="20dp"
-            android:text="프로필 사진을 선택할 수 있습니다."/>
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/signupActivity_imageview_profile"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/user_img"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/camera"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginBottom="20sp"
+                    android:src="@drawable/ic_camera"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/img_text"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:visibility="gone"
+                    android:layout_marginBottom="60sp"
+                    android:src="@drawable/invalid_name"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/camera" />
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/left_line"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_percent="0.58"/>
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/right_line"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_percent="0.68"/>
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/top_line"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_percent="0.65"/>
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/bottom_line"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_percent="0.85"/>
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/update_camera"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:layout_constraintStart_toStartOf="@id/left_line"
+                    app:layout_constraintEnd_toEndOf="@id/right_line"
+                    app:layout_constraintTop_toTopOf="@id/top_line"
+                    app:layout_constraintBottom_toBottomOf="@id/bottom_line">
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/oval"/>
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        android:layout_margin="7sp"
+                        android:src="@drawable/ic_camera_2"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -41,7 +121,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:layout_marginEnd="20dp">
+                    android:layout_marginEnd="20dp"
+                    app:hintTextAppearance="@style/MyTextInputLayout">
 
                     <EditText
                         android:id="@+id/signupActivity_edittext_grade"
@@ -57,7 +138,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:layout_marginEnd="20dp">
+                    android:layout_marginEnd="20dp"
+                    app:hintTextAppearance="@style/MyTextInputLayout">
 
                     <EditText
                         android:id="@+id/signupActivity_edittext_name"
@@ -73,7 +155,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:layout_marginEnd="20dp">
+                    android:layout_marginEnd="20dp"
+                    app:hintTextAppearance="@style/MyTextInputLayout">
 
                     <EditText
                         android:id="@+id/signupActivity_edittext_tel"
@@ -89,7 +172,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:layout_marginEnd="20dp">
+                    android:layout_marginEnd="20dp"
+                    app:hintTextAppearance="@style/MyTextInputLayout">
 
                     <EditText
                         android:id="@+id/signupActivity_edittext_hospital"
@@ -105,7 +189,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:layout_marginEnd="20dp">
+                    android:layout_marginEnd="20dp"
+                    app:hintTextAppearance="@style/MyTextInputLayout">
 
                     <EditText
                         android:id="@+id/signupActivity_edittext_email"
@@ -121,7 +206,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:layout_marginEnd="20dp">
+                    android:layout_marginEnd="20dp"
+                    app:hintTextAppearance="@style/MyTextInputLayout">
 
                     <EditText
                         android:id="@+id/signupActivity_edittext_password"
@@ -132,22 +218,24 @@
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
-    </LinearLayout>
-</ScrollView>
+        </LinearLayout>
+    </ScrollView>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.1"
         android:gravity="center">
+
         <Button
             android:id="@+id/signupActivity_button_signup"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="회원가입"
-            android:background="@drawable/btn_radius"
-            android:textColor="@android:color/white"
             android:layout_marginStart="38dp"
             android:layout_marginEnd="38dp"
+            android:background="@drawable/btn_radius"
+            android:text="회원가입"
+            android:textColor="@android:color/white"
             android:textSize="25sp"
             android:textStyle="bold" />
     </LinearLayout>

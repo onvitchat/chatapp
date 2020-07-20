@@ -32,9 +32,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Utiles {
-    public static final int firstReadChatCount = 200;
     private static long returnTime;
-
+    public static final int RESIZE = 500;
     public static AlertDialog createLoadingDialog(Context context, String text) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View view = LayoutInflater.from(context).inflate(R.layout.loading, null);

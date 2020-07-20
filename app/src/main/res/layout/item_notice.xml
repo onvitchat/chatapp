@@ -4,55 +4,60 @@
     android:id="@+id/layout_title"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="8dp"
-    android:paddingEnd="8dp"
-    android:paddingBottom="5dp"
     android:orientation="vertical"
     android:background="?attr/selectableItemBackground"
+    android:layout_marginBottom="15dp"
     android:clickable="true">
-
-    <TextView
-        android:id="@+id/line_text"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginBottom="10dp"
-        android:background="@color/colorGray" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
+        android:layout_marginStart="15dp"
         android:layout_marginBottom="5dp">
 
-        <ImageView
+        <TextView
             android:id="@+id/notice"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="5dp"
-            android:layout_weight="0.1"
-            android:src="@drawable/notice_icon" />
-
+            android:layout_marginEnd="8dp"
+            android:textSize="15dp"
+            android:textColor="@color/purple"
+            android:text="공지" />
         <TextView
-            android:id="@+id/notice_title"
-            android:layout_width="0dp"
+            android:id="@+id/notice_name"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_weight="0.8"
+            android:layout_marginEnd="5dp"
             android:ellipsize="end"
-            android:maxWidth="250dp"
+            android:maxWidth="150dp"
+            android:textSize="15dp"
             android:maxLines="1"
-            android:textColor="@color/black"
-            android:lineSpacingExtra="5dp"
-            android:textSize="25dp"
-            tools:text="공지사항 제목은 최대 두줄까지 나오고 두줄이 넘어가면 점점점으로 표기됩니다." />
-
+            android:textColor="#aaaaaa"
+            tools:text="박재식(대구삼선병원)" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="5dp"
+            android:textSize="15dp"
+            android:textColor="#aaaaaa"
+            android:text="|" />
+        <TextView
+            android:id="@+id/notice_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="5dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textSize="15dp"
+            android:textColor="#aaaaaa"
+            tools:text="공지사항시간" />
         <ImageView
             android:id="@+id/new_icon"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:layout_weight="0.08"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:src="@drawable/new_icon"
             android:visibility="invisible"/>
     </LinearLayout>
@@ -63,38 +68,25 @@
         android:layout_marginTop="5dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-        <ImageView
-            android:layout_width="0dp"
-            android:layout_height="30dp"
-            android:layout_weight="0.07"
-            android:layout_marginEnd="5dp"
-            android:src="@drawable/left_name_icon"/>
         <TextView
-            android:id="@+id/notice_name"
+            android:id="@+id/notice_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:layout_marginEnd="5dp"
-            android:textSize="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="0.8"
             android:ellipsize="end"
+            android:maxWidth="250dp"
             android:maxLines="1"
-            tools:text="박재식(대구삼선병원)" />
-        <ImageView
-            android:layout_width="0dp"
-            android:layout_height="30dp"
-            android:layout_weight="0.07"
-            android:layout_marginStart="5dp"
-            android:layout_marginEnd="5dp"
-            android:src="@drawable/left_time_icon"/>
-        <TextView
-            android:id="@+id/notice_time"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:layout_marginEnd="5dp"
+            android:textColor="#000000"
+            android:lineSpacingExtra="8dp"
             android:textSize="20dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            tools:text="공지사항시간" />
+            tools:text="공지사항 제목은 최대 두줄까지 나오고 두줄이 넘어가면 점점점으로 표기됩니다." />
     </LinearLayout>
+    <TextView
+        android:id="@+id/line_text2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="15dp"
+        android:background="#CCCCCC" />
 </LinearLayout>

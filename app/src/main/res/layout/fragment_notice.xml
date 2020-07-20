@@ -12,24 +12,53 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:titleTextColor="@color/black"
-        android:layout_marginBottom="10dp"
         android:theme="@style/AppTheme.actionBar">
     </androidx.appcompat.widget.Toolbar>
-
+    <TextView
+        android:id="@+id/line_text"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/chat_toolbar"
+        android:background="#CCCCCC" />
+    <TextView
+        android:id="@+id/line_text2"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginBottom="10dp"
+        android:layout_below="@id/line_text"
+        android:background="#F2F2F2" />
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/fragment_notice_recycler"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/chat_toolbar" />
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:fabSize="normal"
+        android:layout_below="@id/line_text2" />
+    <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/plus_notice"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="10dp"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:backgroundTint="#FF00DD"
-        android:src="@drawable/ic_create_black_24dp"/>
+        android:src="@drawable/oval"/>
+    <ImageView
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/ic_write"
+        android:layout_marginEnd="35dp"
+        android:layout_marginBottom="25dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"/>
+
+    <!--    <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        app:fabSize="normal"-->
+    <!--        android:id="@+id/plus_notice"-->
+    <!--        android:layout_marginEnd="20dp"-->
+    <!--        android:layout_marginBottom="10dp"-->
+    <!--        android:layout_alignParentBottom="true"-->
+    <!--        android:layout_alignParentRight="true"-->
+    <!--        app:backgroundTint="@color/purple"-->
+    <!--        android:src="@drawable/ic_write"/>-->
 </RelativeLayout>

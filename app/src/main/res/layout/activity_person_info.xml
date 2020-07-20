@@ -3,12 +3,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".contact.PersonInfoActivity"
-    android:background="@color/white">
+    android:background="@color/white"
+    tools:context=".contact.PersonInfoActivity">
 
     <include
         android:id="@+id/chat_toolbar"
         layout="@layout/app_bar_layout" />
+
+    <TextView
+        android:id="@+id/line_text"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/chat_toolbar"
+        android:layout_marginBottom="10dp"
+        android:background="#CCCCCC" />
 
     <LinearLayout
         android:id="@+id/profile_img"
@@ -19,107 +27,133 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <ImageView
+        <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/info_img"
-            android:layout_width="250dp"
-            android:layout_height="250dp" />
-        <LinearLayout
-            android:id="@+id/info_linear_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:orientation="horizontal"
-            android:layout_marginTop="10dp"
-            android:layout_marginStart="10dp">
-
-            <LinearLayout
-                android:id="@+id/info_modi"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                android:clickable="true"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:id="@+id/info_modify"
-                    android:layout_width="25dp"
-                    android:layout_height="25dp"
-                    android:src="@drawable/ic_create_black_50dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="프로필 편집"
-                    android:textColor="@color/black"
-                    android:textSize="25dp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/info_call"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                android:clickable="true"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:id="@+id/info_call_img"
-                    android:layout_width="25dp"
-                    android:layout_height="25dp"
-                    android:src="@drawable/ic_local_phone_black_24dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="전화걸기"
-                    android:textColor="@color/black"
-                    android:textSize="25dp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-        </LinearLayout>
+            android:layout_width="200dp"
+            android:layout_height="200dp" />
     </LinearLayout>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentBottom="true"
-        android:layout_below="@+id/profile_img">
+        android:layout_below="@+id/profile_img"
+        android:layout_alignParentBottom="true">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
-            android:layout_marginStart="20dp">
+            android:layout_marginEnd="20dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:text="이름"
+                android:textColor="@color/purple"
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:textSize="30dp"
+                android:layout_marginBottom="20dp"
+                android:textColor="@color/black"
+                android:textSize="25sp"
                 tools:text="임종호" />
 
             <TextView
-                android:id="@+id/hospital"
-
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
-                android:textSize="30dp"
-                tools:text="로즈마리병원" />
+                android:text="전화번호"
+                android:textColor="@color/purple"
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/tel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="30dp"
+                android:layout_marginBottom="20dp"
+                android:textColor="@color/black"
+                android:textSize="25sp"
                 tools:text="전화번호" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:text="병원"
+                android:textColor="@color/purple"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/hospital"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:textColor="@color/black"
+                android:textSize="25sp"
+                tools:text="로즈마리병원" />
         </LinearLayout>
     </ScrollView>
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_above="@id/info_linear_layout"
+        android:background="#CCCCCC" />
+
+    <LinearLayout
+        android:id="@+id/info_linear_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/info_modi"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:gravity="center"
+            android:paddingTop="20sp"
+            android:paddingBottom="20sp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="프로필 편집"
+                android:textColor="@color/black"
+                android:textSize="25dp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/info_call"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:gravity="center"
+            android:paddingTop="20sp"
+            android:paddingBottom="20sp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="전화걸기"
+                android:textColor="@color/black"
+                android:textSize="25dp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
 </RelativeLayout>

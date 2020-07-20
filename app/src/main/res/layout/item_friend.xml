@@ -23,7 +23,7 @@
         android:layout_marginLeft="10dp"
         android:paddingEnd="10dp"
         android:orientation="horizontal">
-        <ImageView
+        <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/frienditem_imageview"
             android:layout_width="45dp"
             android:layout_height="45dp"
@@ -51,8 +51,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:layout_marginStart="5dp"
-                android:textColor="@android:color/holo_blue_bright"
-                android:textSize="20dp"
+                android:textColor="#aaaaaa"
+                android:textSize="15dp"
                 android:maxLines="2"
                 android:ellipsize="end"
                 tools:text="병원" />

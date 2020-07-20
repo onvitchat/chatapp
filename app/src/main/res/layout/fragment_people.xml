@@ -12,6 +12,19 @@
         <include
             android:id="@+id/chat_toolbar"
             layout="@layout/app_bar_layout" />
+        <TextView
+            android:id="@+id/line_text"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/chat_toolbar"
+            android:background="#CCCCCC" />
+        <TextView
+            android:id="@+id/line_text2"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginBottom="10dp"
+            android:layout_below="@id/line_text"
+            android:background="#F2F2F2" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/peoplefragment_recyclerview"

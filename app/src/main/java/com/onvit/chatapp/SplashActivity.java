@@ -32,9 +32,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.model.ChatModel;
-import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.model.Vote;
 import com.onvit.chatapp.util.PreferenceManager;
 import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
@@ -47,11 +45,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 public class SplashActivity extends AppCompatActivity {
     private FirebaseRemoteConfig mFirebaseRemoteConfig;
@@ -73,8 +69,6 @@ public class SplashActivity extends AppCompatActivity {
                 .setMinimumFetchIntervalInSeconds(0) // 한시간에 최대 한번 요청할 수 있음. 한시간의 캐싱타임을 가짐.
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
-//        changDB();
-        deleteChat(90);
     }
 
     @Override
@@ -89,7 +83,7 @@ public class SplashActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<Boolean> task) {
                         if (task.isSuccessful()) {
-                            boolean updated = task.getResult();
+                            Boolean updated = task.getResult();
                             versionCheck();
                             Log.d("원격", "Config params updated: " + updated);
                         } else {
@@ -218,7 +212,6 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void initSplash() {
-        //앱정보 초기화
         UserMap.clearApp();
         //로그인정보 없으면 로그인페이지로
         FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
@@ -230,7 +223,9 @@ public class SplashActivity extends AppCompatActivity {
             //로그인정보 있으면 상황에 따라 해당페이지로
         } else {
             final String uid = firebaseUser.getUid();
+            deleteChat();
             Log.d("아이디", uid);
+
             FirebaseDatabase.getInstance().getReference().child("Users").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -292,6 +287,7 @@ public class SplashActivity extends AppCompatActivity {
                 }
             });
         }
+
     }
 
     private Uri getConvertUri(Uri uri) {
@@ -318,83 +314,11 @@ public class SplashActivity extends AppCompatActivity {
     }
 
 
-    //디비테이블 바꾸는거 최초에 한 번 내폰으로 실행하고 지움.
-    private void changDB() {
-        FirebaseDatabase.getInstance().getReference().child("groupChat").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Map<String, Object> map = new HashMap<>();
-                for (DataSnapshot d : dataSnapshot.getChildren()) {
-                    String chatName;
-                    ChatModel chatModel = d.getValue(ChatModel.class);
-                    if (d.getKey().equals("normalChat")) {
-                        chatName = "회원채팅방";
-                        chatModel.id = 1;
-                    } else if (d.getKey().equals("officerChat")) {
-                        chatName = "임원채팅방";
-                        chatModel.id = 2;
-                    } else {
-                        chatName = d.getKey();
-                    }
-                    Map<String, ChatModel.Comment> c = chatModel.comments;
-                    Set<String> key = c.keySet();
-                    for (String k : key) {
-                        c.get(k).setUnReadCount(0);
-                    }
-                    map.put(chatName, chatModel);
-                    map.put("normalChat", null);
-                    map.put("officerChat", null);
-                }
-                FirebaseDatabase.getInstance().getReference().child("groupChat").updateChildren(map);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-        FirebaseDatabase.getInstance().getReference().child("lastChat").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
-                Set<String> key = map.keySet();
-                for (String k : key) {
-                    Map<String, Object> m = (Map<String, Object>) map.get(k);
-                    Map<String, Object> m2 = (Map<String, Object>) m.get("existUsers");
-                    m.put("users", null);
-                    Set<String> ke2 = m2.keySet();
-                    ArrayList<String> key2 = new ArrayList<>(ke2);
-                    for (String k2 : key2) {
-                        LastChat.timeInfo timeInfo = new LastChat.timeInfo();
-                        long time = 1579231775390l;
-                        timeInfo.setInitTime(time);
-                        timeInfo.setExitTime(System.currentTimeMillis());
-                        timeInfo.setUnReadCount(0);
-                        m2.put(k2, timeInfo);
-                    }
-                }
-                Map<String, Object> m = (Map<String, Object>) map.get("normalChat");
-                Map<String, Object> m2 = (Map<String, Object>) map.get("officerChat");
-                if (m != null && m2 != null) {
-                    map.put("회원채팅방", m);
-                    map.put("임원채팅방", m2);
-                }
-                map.put("normalChat", null);
-                map.put("officerChat", null);
-                FirebaseDatabase.getInstance().getReference().child("lastChat").updateChildren(map);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-    private void deleteChat(int i) {
+    private void deleteChat() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd", Locale.KOREA);
         final Date date = new Date();
         if (sdf.format(date).equals("01")) {
-            long twoM = (24L * 60 * 60 * 1000 * i);
+            long twoM = (24L * 60 * 60 * 1000 * 90);
             final long oldDate = date.getTime() - twoM;
             //두달지난거 삭제함.
             FirebaseDatabase.getInstance().getReference().child("groupChat").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -412,17 +336,18 @@ public class SplashActivity extends AppCompatActivity {
                                     List<String> deleteKey = new ArrayList<>();
                                     List<String> deleteKey2 = new ArrayList<>();
                                     for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                        map.put(item.getKey(), null);
+                                        map.remove(item.getKey());
                                         ChatModel.Comment comment = item.getValue(ChatModel.Comment.class);
-
-                                        if (comment.getType().equals("img")) {
-                                            deleteKey.add(item.getKey());
-                                        }
-                                        if (comment.getType().equals("file")) {
-                                            int a = comment.getMessage().lastIndexOf("https");
-                                            int b = comment.getMessage().substring(0, a).lastIndexOf(".");
-                                            String ext = comment.getMessage().substring(0, a).substring(b + 1);
-                                            deleteKey2.add(item.getKey() + "." + ext);
+                                        if(comment!=null){
+                                            if (comment.getType().equals("img")) {
+                                                deleteKey.add(item.getKey());
+                                            }
+                                            if (comment.getType().equals("file")) {
+                                                int a = comment.getMessage().lastIndexOf("https");
+                                                int b = comment.getMessage().substring(0, a).lastIndexOf(".");
+                                                String ext = comment.getMessage().substring(0, a).substring(b + 1);
+                                                deleteKey2.add(item.getKey() + "." + ext);
+                                            }
                                         }
                                     }
                                     for (String d : deleteKey) {

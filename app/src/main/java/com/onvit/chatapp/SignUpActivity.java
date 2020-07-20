@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.Continuation;
@@ -57,26 +58,19 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SignUpActivity extends AppCompatActivity {
     public static final int REQUEST_CODE = 1000;
-    private EditText name;
-    private EditText hospital;
-    private EditText tel;
-    private EditText email;
-    private EditText grade;
-    private EditText password;
-    private TextInputLayout tName;
-    private TextInputLayout tHospital;
-    private TextInputLayout tTel;
-    private TextInputLayout tEmail;
-    private TextInputLayout tPassword;
-    private ImageView profileImageView;
+    private EditText name,hospital,tel,email,grade,password;
+    private TextInputLayout tName,tHospital,tTel,tEmail,tPassword;
+    private ImageView profileImageView, camera, invalid;
     private Uri imageUri;
     private User user;
     private String filePath;
+    private ConstraintLayout constraintLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +79,9 @@ public class SignUpActivity extends AppCompatActivity {
 
         imageUri = null;
         profileImageView = findViewById(R.id.signupActivity_imageview_profile);
-
+        constraintLayout = findViewById(R.id.update_camera);
+        camera = findViewById(R.id.camera);
+        invalid = findViewById(R.id.img_text);
         // 내 사진첩 열어서 사진 가지고 오는 부분.
         profileImageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,7 +108,7 @@ public class SignUpActivity extends AppCompatActivity {
         tTel.setErrorEnabled(true);
         tEmail.setErrorEnabled(true);
         tPassword.setErrorEnabled(true);
-        Button signup = findViewById(R.id.signupActivity_button_signup);
+        Button signUp = findViewById(R.id.signupActivity_button_signup);
         password.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
         //회원가입
@@ -127,11 +123,9 @@ public class SignUpActivity extends AppCompatActivity {
             grade.setClickable(false);
             name.setFocusable(false);
             name.setClickable(false);
-            tel.setFocusable(false);
-            tel.setClickable(false);
-            hospital.setFocusable(false);
-            hospital.setClickable(false);
-            signup.setText("회원가입");
+            signUp.setText("회원가입");
+            camera.setVisibility(View.VISIBLE);
+            invalid.setVisibility(View.VISIBLE);
             password.setOnEditorActionListener(new TextView.OnEditorActionListener() { // 완료눌러도 회원가입기능되게~
                 @Override
                 public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
@@ -142,7 +136,7 @@ public class SignUpActivity extends AppCompatActivity {
                 }
             });
 
-            signup.setOnClickListener(new View.OnClickListener() {
+            signUp.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     signUp();
@@ -150,7 +144,8 @@ public class SignUpActivity extends AppCompatActivity {
                 }
             });
         } else {
-            signup.setText("프로필 수정");
+            constraintLayout.setVisibility(View.VISIBLE);
+            signUp.setText("저장");
             user = getIntent().getParcelableExtra("modify");
             if (user.getUserProfileImageUrl().equals("noImg")) {
                 profileImageView.setImageResource(R.drawable.standard_profile);
@@ -169,12 +164,8 @@ public class SignUpActivity extends AppCompatActivity {
             name.setClickable(false);
             grade.setFocusable(false);
             grade.setClickable(false);
-            tel.setFocusable(false);
-            tel.setClickable(false);
-            hospital.setFocusable(false);
-            hospital.setClickable(false);
             tPassword.setVisibility(View.GONE);
-            signup.setOnClickListener(new View.OnClickListener() {
+            signUp.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(SignUpActivity.this);
@@ -193,43 +184,47 @@ public class SignUpActivity extends AppCompatActivity {
 
     private void modify(final AlertDialog dialog) {
         if (imageUri != null && !imageUri.equals(Uri.parse(user.getUserProfileImageUrl()))) {
-            Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
+            Bitmap bitmap = resize(SignUpActivity.this, imageUri);
             ExifInterface exif = null;
             try {
                 exif = new ExifInterface(filePath);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(exif!=null){
+            if (exif != null) {
                 int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                 Bitmap newBitmap = rotateBitmap(bitmap, orientation);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                final byte[] bytes = baos.toByteArray();
-                final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(user.getUid());
-                UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
-                uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-                    @Override
-                    public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                        if (!task.isSuccessful()) {
-                            throw task.getException();
+                if (newBitmap != null) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    final byte[] bytes = baos.toByteArray();
+                    final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(user.getUid());
+                    UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
+                    uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                        @Override
+                        public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                            if (!task.isSuccessful()) {
+                                throw Objects.requireNonNull(task.getException());
+                            }
+                            return storageReference.getDownloadUrl();
                         }
-                        return storageReference.getDownloadUrl();
-                    }
-                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-                    //storageReference 에 저장한 이미지 uri를 불러옴
-                    @Override
-                    public void onComplete(@NonNull Task<Uri> task) {
-                        if (task.isSuccessful()) {
-                            Uri taskResult = task.getResult();
-                            String imageUri = taskResult.toString();
-                            modifyInfo(imageUri, dialog);
+                    }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                        //storageReference 에 저장한 이미지 uri를 불러옴
+                        @Override
+                        public void onComplete(@NonNull Task<Uri> task) {
+                            if (task.isSuccessful()) {
+                                Uri taskResult = task.getResult();
+                                String imageUri = String.valueOf(taskResult);
+                                modifyInfo(imageUri, dialog);
 
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    String imageUri = user.getUserProfileImageUrl();
+                    modifyInfo(imageUri, dialog);
+                }
             }
-
         } else {
             String imageUri = user.getUserProfileImageUrl();
             modifyInfo(imageUri, dialog);
@@ -266,16 +261,19 @@ public class SignUpActivity extends AppCompatActivity {
                         } else {
                             for (DataSnapshot item : dataSnapshot.getChildren()) {
                                 Notice notice = item.getValue(Notice.class);
-                                notice.setName(PreferenceManager.getString(SignUpActivity.this, "name") + "(" + PreferenceManager.getString(SignUpActivity.this, "hospital") + ")");
-                                Map<String, Object> map = new HashMap<>();
-                                map.put(item.getKey(), notice);
-                                FirebaseDatabase.getInstance().getReference().child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        dialog.dismiss();
-                                        finish();
-                                    }
-                                });
+                                String key = item.getKey();
+                                if (notice != null && key != null) {
+                                    notice.setName(PreferenceManager.getString(SignUpActivity.this, "name") + "(" + PreferenceManager.getString(SignUpActivity.this, "hospital") + ")");
+                                    Map<String, Object> map = new HashMap<>();
+                                    map.put(key, notice);
+                                    FirebaseDatabase.getInstance().getReference().child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            dialog.dismiss();
+                                            finish();
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
@@ -309,58 +307,62 @@ public class SignUpActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.getException() != null) {
                             dialog.dismiss();
-                            Utiles.customToast(SignUpActivity.this,  task.getException().toString()).show();
+                            Utiles.customToast(SignUpActivity.this, task.getException().toString()).show();
                             return;
                         }
-                        final String uid = task.getResult().getUser().getUid();
-                        final User signUser = new User();
-                        signUser.setUserName(name.getText().toString());
-                        signUser.setHospital(hospital.getText().toString());
-                        signUser.setGrade(grade.getText().toString());
-                        signUser.setTel(tel.getText().toString());
-                        signUser.setUserEmail(email.getText().toString());
-                        signUser.setPushToken("");
-                        signUser.setUid(uid);
-                        if (imageUri != null) {
-                            Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
-                            ExifInterface exif = null;
-                            Log.d("이미지파일", filePath);
-                            try {
-                                exif = new ExifInterface(filePath);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-                            Bitmap newBitmap = rotateBitmap(bitmap, orientation);
+                        if(task.getResult()!=null && task.getResult().getUser()!=null){
+                            final String uid = task.getResult().getUser().getUid();
+                            final User signUser = new User();
+                            signUser.setUserName(name.getText().toString());
+                            signUser.setHospital(hospital.getText().toString());
+                            signUser.setGrade(grade.getText().toString());
+                            signUser.setTel(tel.getText().toString());
+                            signUser.setUserEmail(email.getText().toString());
+                            signUser.setPushToken("");
+                            signUser.setUid(uid);
+                            if (imageUri != null) {
+                                Bitmap bitmap = resize(SignUpActivity.this, imageUri);
+                                ExifInterface exif;
+                                Log.d("이미지파일", filePath);
+                                try {
+                                    exif = new ExifInterface(filePath);
+                                    int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                                    Bitmap newBitmap = rotateBitmap(bitmap, orientation);
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                    if(newBitmap!=null){
+                                        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                                        final byte[] bytes = baos.toByteArray();
+                                        final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(uid);
+                                        UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
+                                        uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                                            @Override
+                                            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                                                if (!task.isSuccessful()) {
+                                                    throw Objects.requireNonNull(task.getException());
+                                                }
+                                                return storageReference.getDownloadUrl();
+                                            }
+                                        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                                            //storageReference 에 저장한 이미지 uri를 불러옴
+                                            @Override
+                                            public void onComplete(@NonNull Task<Uri> task) {
+                                                if (task.isSuccessful()) {
+                                                    Uri taskResult = task.getResult();
+                                                    String imageUri = String.valueOf(taskResult);
+                                                    signUser.setUserProfileImageUrl(imageUri);
+                                                    signUpUser(uid, signUser, dialog);
+                                                }
+                                            }
+                                        });
+                                    }
 
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                            final byte[] bytes = baos.toByteArray();
-                            final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(uid);
-                            UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
-                            uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-                                @Override
-                                public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                                    if (!task.isSuccessful()) {
-                                        throw task.getException();
-                                    }
-                                    return storageReference.getDownloadUrl();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
                                 }
-                            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-                                //storageReference 에 저장한 이미지 uri를 불러옴
-                                @Override
-                                public void onComplete(@NonNull Task<Uri> task) {
-                                    if (task.isSuccessful()) {
-                                        Uri taskResult = task.getResult();
-                                        String imageUri = taskResult.toString();
-                                        signUser.setUserProfileImageUrl(imageUri);
-                                        signUpUser(uid, signUser, dialog);
-                                    }
-                                }
-                            });
-                        } else {
-                            signUser.setUserProfileImageUrl("noImg");
-                            signUpUser(uid, signUser, dialog);
+                            } else {
+                                signUser.setUserProfileImageUrl("noImg");
+                                signUpUser(uid, signUser, dialog);
+                            }
                         }
                     }
 
@@ -392,7 +394,7 @@ public class SignUpActivity extends AppCompatActivity {
                                 Map<String, Object> map2 = new HashMap<>();
                                 LastChat.timeInfo timeInfo = new LastChat.timeInfo();
                                 timeInfo.setExitTime(time);
-                                timeInfo.setInitTime(time-1);
+                                timeInfo.setInitTime(time - 1);
                                 timeInfo.setUnReadCount(0);
                                 FirebaseDatabase.getInstance().getReference().child("groupChat").child("회원채팅방").child("comments").push().setValue(normalComment);
                                 //각각의 그룹채팅방에 유저 정보 / 접속여부를 넣음
@@ -439,15 +441,13 @@ public class SignUpActivity extends AppCompatActivity {
                 }).addOnCanceledListener(SignUpActivity.this, new OnCanceledListener() {
             @Override
             public void onCanceled() {
-                Utiles.customToast(SignUpActivity.this,"가입취소").show();
+                Utiles.customToast(SignUpActivity.this, "가입취소").show();
             }
         }).addOnFailureListener(SignUpActivity.this, new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 dialog.dismiss();
                 Utiles.customToast(SignUpActivity.this, e.toString()).show();
-                return;
-
             }
         });
     }
@@ -502,7 +502,7 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     //사진크기조절
-    private Bitmap resize(Context context, Uri uri, int resize) {
+    private Bitmap resize(Context context, Uri uri) {
         Bitmap resizeBitmap = null;
 
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -514,9 +514,8 @@ public class SignUpActivity extends AppCompatActivity {
             Log.d("사진크기", "width=" + width + "/height=" + height);
             int samplesize = 1;
 
-            while (true) {//2번
-                if (width / 2 < resize && height / 2 < resize)
-                    break;
+
+            while (width / 2 >= Utiles.RESIZE || height / 2 >= Utiles.RESIZE) {//2번
                 width /= 2;
                 height /= 2;
                 samplesize *= 2;
@@ -524,8 +523,7 @@ public class SignUpActivity extends AppCompatActivity {
             Log.d("사진크기", "width=" + width + "/height=" + height + "/samplesize=" + samplesize);
 
             options.inSampleSize = samplesize;
-            Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri), null, options); //3번
-            resizeBitmap = bitmap;
+            resizeBitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri), null, options);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -539,12 +537,22 @@ public class SignUpActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             imageUri = data.getData();//이미지 경로 원본
-            Log.d("이미지 경로", imageUri.toString());
-            profileImageView.setImageURI(imageUri);
             filePath = getRealPathFromURI(imageUri);
+            ExifInterface exif;
+            try {
+                Bitmap b = MediaStore.Images.Media.getBitmap(getContentResolver(), data.getData());
+                exif = new ExifInterface(filePath);
+                int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                Bitmap newBitmap = rotateBitmap(b, orientation);
+                Glide.with(this).load(newBitmap).into(profileImageView);
+                camera.setVisibility(View.GONE);
+                invalid.setVisibility(View.GONE);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Utiles.customToast(SignUpActivity.this, "지원하지 않는 이미지 형식입니다.").show();
+            }
             if (filePath == null) {
                 Utiles.customToast(SignUpActivity.this, "지원하지 않는 이미지 형식입니다.").show();
-                return;
             }
         }
     }
@@ -567,8 +575,6 @@ public class SignUpActivity extends AppCompatActivity {
     private Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
         Matrix matrix = new Matrix();
         switch (orientation) {
-            case ExifInterface.ORIENTATION_NORMAL:
-                return bitmap;
             case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
                 matrix.setScale(-1, 1);
                 break;
@@ -593,6 +599,7 @@ public class SignUpActivity extends AppCompatActivity {
             case ExifInterface.ORIENTATION_ROTATE_270:
                 matrix.setRotate(-90);
                 break;
+            case ExifInterface.ORIENTATION_NORMAL:
             default:
                 return bitmap;
         }
@@ -608,7 +615,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     private boolean checkEmail(String email) {
         boolean result = true;
-        String regex = "^[_a-zA-Z0-9-\\.]+@[\\.a-zA-Z0-9-]+\\.[a-zA-Z]+$";
+        String regex = "^[_a-zA-Z0-9-.]+@[.a-zA-Z0-9-]+\\.[a-zA-Z]+$";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(email);
         if (m.matches()) {

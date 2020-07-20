@@ -56,13 +56,7 @@ public class VoteListActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         String chatName;
         toRoom = getIntent().getStringExtra("room");
-        if (toRoom.equals("normalChat")) {
-            chatName = "회원채팅방 투표목록";
-        } else if (toRoom.equals("officerChat")){
-            chatName = "임원채팅방 투표목록";
-        } else{
-            chatName = toRoom +"투표목록";
-        }
+        chatName = toRoom +"투표목록";
         actionBar.setTitle(chatName);
         actionBar.setDisplayHomeAsUpEnabled(true);
         userList = getIntent().getParcelableArrayListExtra("userList");
@@ -167,6 +161,7 @@ public class VoteListActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
 
 
     class VoteListRecyclerAdapter extends RecyclerView.Adapter<VoteListRecyclerAdapter.VoteViewHolder> {

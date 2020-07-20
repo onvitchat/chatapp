@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import de.hdodenhof.circleimageview.CircleImageView;
 import me.leolin.shortcutbadger.ShortcutBadger;
 
 public class ChatFragment extends Fragment {
@@ -90,7 +91,7 @@ public class ChatFragment extends Fragment {
         }
         uid = UserMap.getUid();
         btn = view.findViewById(R.id.vibrate_btn);
-        FloatingActionButton creatChat = view.findViewById(R.id.plus_chat);
+        CircleImageView creatChat = view.findViewById(R.id.plus_chat);
         users = UserMap.getInstance();
         creatChat.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -27,6 +27,8 @@ import com.onvit.chatapp.chat.BigPictureActivity;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.UserMap;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class PersonInfoActivity extends AppCompatActivity implements View.OnClickListener {
     private Toolbar infoToolbar;
     private String info;
@@ -63,28 +65,25 @@ public class PersonInfoActivity extends AppCompatActivity implements View.OnClic
                     infoToolbar = findViewById(R.id.chat_toolbar);
                     setSupportActionBar(infoToolbar);
                     ActionBar actionBar = getSupportActionBar();
-                    if (actionBar != null) {
+                    if(actionBar!=null){
                         actionBar.setTitle(info);
                         actionBar.setDisplayHomeAsUpEnabled(true);
                     }
                     String newTel = user.getTel().substring(0, 3) + "-" + user.getTel().substring(3, 7) + "-" + user.getTel().substring(7);
-                    String nameText = "성명 : " + user.getUserName();
-                    String telText = "전화번호 : " + newTel;
-                    String hospitalText = "병원명 : " + user.getHospital();
+                    String nameText = user.getUserName();
+                    String telText = newTel;
+                    String hospitalText = user.getHospital();
                     name.setText(nameText);
                     tel.setText(telText);
                     hospital.setText(hospitalText);
 
-                    ImageView imageView = findViewById(R.id.info_img);
+                    CircleImageView imageView = findViewById(R.id.info_img);
                     //사진에 곡률넣음.
                     if (user.getUserProfileImageUrl().equals("noImg")) {
-                        Glide.with(PersonInfoActivity.this).load(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(imageView);
+                        Glide.with(PersonInfoActivity.this).load(R.drawable.standard_profile).into(imageView);
                     } else {
-                        Glide.with(PersonInfoActivity.this).load(user.getUserProfileImageUrl()).apply(new RequestOptions().centerCrop()).into(imageView);
+                        Glide.with(PersonInfoActivity.this).load(user.getUserProfileImageUrl()).into(imageView);
                     }
-                    GradientDrawable gradientDrawable = (GradientDrawable) PersonInfoActivity.this.getDrawable(R.drawable.radius);
-                    imageView.setBackground(gradientDrawable);
-                    imageView.setClipToOutline(true);
                     imageView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {

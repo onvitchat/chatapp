@@ -9,7 +9,7 @@
         android:id="@+id/toolbar_layout"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:background="#DBE1EF"
+        android:background="#FFFFFF"
         android:orientation="horizontal">
         <ImageView
             android:id="@+id/back_arrow"

@@ -57,7 +57,6 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private final static int PERMISSION_REQUEST_CODE = 1000;
-    private final int firstReadChatCount = Utiles.firstReadChatCount;
     BottomNavigationMenuView bottomNavigationMenuView;
     BottomNavigationView bottomNavigationView;
     private User user;
@@ -84,12 +83,12 @@ public class MainActivity extends AppCompatActivity {
         uid = UserMap.getUid();
 
         //uid없으면 받아와서 설정.
-        if(uid==null){
+        if (uid == null) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if(user!=null){
+            if (user != null) {
                 uid = user.getUid();
                 UserMap.setUid(uid);
-            }else{
+            } else {
                 Utiles.customToast(MainActivity.this, "인증오류").show();
                 UserMap.clearApp();
                 Intent intent = new Intent(MainActivity.this, LoginActivity.class);
@@ -286,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
         if (getIntent().getStringExtra("tag") != null) {
             if (!getIntent().getStringExtra("tag").equals("notice")) {
                 bottomNavigationView.setSelectedItemId(R.id.action_chat);
-            }else{
+            } else {
                 getIntent().removeExtra("tag");
             }
         }
@@ -306,14 +305,14 @@ public class MainActivity extends AppCompatActivity {
                     final LastChat lastChat = item.getValue(LastChat.class);
                     if (lastChat.getExistUsers().get(uid) != null) {
                         count += lastChat.getExistUsers().get(uid).getUnReadCount();
-                        Log.d("뱃지",  count+"dd");
+                        Log.d("뱃지", count + "dd");
                     } else {
                         count += 0;
                     }
                 }
                 if (count > 0) {
                     String c = count + "";
-                    Log.d("뱃지",  c);
+                    Log.d("뱃지", c);
                     badgeView.setText(c);
                     badgeView.setVisibility(View.VISIBLE);
                 } else {

@@ -118,6 +118,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.hdodenhof.circleimageview.CircleImageView;
 import jp.wasabeef.glide.transformations.BlurTransformation;
 import jp.wasabeef.glide.transformations.GrayscaleTransformation;
 
@@ -150,8 +151,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     private String checker = "";
     private View.OnLayoutChangeListener onLayoutChangeListener;
     private RelativeLayout relativeLayout, downLoadFile;
-    private ImageView option;
-    private TextView pCount, sendFile;
+    private ImageView option, sendFile;
+    private TextView pCount;
     private Description description; // 크롤링하는 asynctask
     private List<String> unReader = new ArrayList<>();
 
@@ -337,7 +338,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     }
 
     void init() {
-        Button button = findViewById(R.id.groupMessageActivity_button);
+        LinearLayout button = findViewById(R.id.groupMessageActivity_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -1231,6 +1232,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     case "text":
                         holder.textView_message.setVisibility(View.VISIBLE);
                         holder.textView_message.setBackgroundResource(R.drawable.sender_message_layout);
+                        holder.textView_message.setTextColor(Color.parseColor("#FFFFFF"));
+                        holder.textView_message.setLinkTextColor(Color.YELLOW);
                         holder.textView_message.setMaxWidth((int) (width * 0.75));
                         if (newComments.get(position).message.length() > 500) {
                             String m = newComments.get(position).message.substring(0, 300) + "...\n\n 전체보기  >>";
@@ -1238,7 +1241,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                             String word = "전체보기  >>";
                             int start = m.indexOf(word);
                             int end = start + word.length();
-                            spannableString2.setSpan(new ForegroundColorSpan(Color.parseColor("#8C8C8C")), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            spannableString2.setSpan(new ForegroundColorSpan(Color.YELLOW), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                             spannableString2.setSpan(new RelativeSizeSpan(1.3f), start, end, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
                             spannableString2.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                             holder.textView_message.setText(spannableString2);
@@ -1318,6 +1321,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     case "text":
                         holder.textView_message.setVisibility(View.VISIBLE);
                         holder.textView_message.setBackgroundResource(R.drawable.receiver_messages_layout);
+                        holder.textView_message.setTextColor(Color.parseColor("#000000"));
                         holder.textView_message.setMaxWidth((int) (width * 0.65));
                         if (newComments.get(position).message.length() > 500) {
                             String m = newComments.get(position).message.substring(0, 300) + "...\n\n 전체보기  >>";
@@ -1325,7 +1329,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                             String word = "전체보기  >>";
                             int start = m.indexOf(word);
                             int end = start + word.length();
-                            spannableString2.setSpan(new ForegroundColorSpan(Color.parseColor("#8C8C8C")), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            spannableString2.setSpan(new ForegroundColorSpan(Color.parseColor("#000000")), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                             spannableString2.setSpan(new RelativeSizeSpan(1.3f), start, end, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
                             spannableString2.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                             holder.textView_message.setText(spannableString2);
@@ -1715,10 +1719,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         private void yourProfileImage(@NonNull groupViewHolder holder, final int position) {
             //상대방 사진 표시
             if (users.get(newComments.get(position).uid) == null) {
-                Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView_profile);
-                GradientDrawable profile = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
-                holder.imageView_profile.setBackground(profile);
-                holder.imageView_profile.setClipToOutline(true);
+                Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).into(holder.imageView_profile);
                 holder.textView_name.setText("(알수없음)");
                 holder.linearLayout_to.setVisibility(View.VISIBLE);
                 User u = new User();
@@ -1728,14 +1729,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 users.put(newComments.get(position).uid, u);
             } else {
                 if ((users.get(newComments.get(position).uid).getUserProfileImageUrl()).equals("noImg")) {
-                    Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView_profile);
+                    Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).into(holder.imageView_profile);
                 } else {
                     Glide.with(holder.itemView.getContext()).load(users.get(newComments.get(position).uid).getUserProfileImageUrl())
-                            .placeholder(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView_profile);
+                            .placeholder(R.drawable.standard_profile).into(holder.imageView_profile);
                 }
-                GradientDrawable profile = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
-                holder.imageView_profile.setBackground(profile);
-                holder.imageView_profile.setClipToOutline(true);
                 //상대방 이름 표시
                 holder.textView_name.setText(String.format("%s(%s)", users.get(newComments.get(position).uid).getUserName(),
                         users.get(newComments.get(position).uid).getHospital()));
@@ -1956,10 +1954,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
         private class groupViewHolder extends RecyclerView.ViewHolder {
             private TextView textView_message, textView_name, textView_my_timestamp, textView_other_timestamp, textView_readCounter_left, textView_readCounter_right, messageItem_change_date_textView, textView_thumb, vote_title, textView_thumb_address, layout_file_name, layout_file_extension, textView_invite, go_to_vote;
-            private ImageView imageView_profile, imageView;
+            private ImageView imageView;
             private LinearLayout linearLayout_to, layout_file, layout_vote, linearLayout_change_date, linear_layout_main, linearLayout_my, linearLayout_other, linearLayout_invte;
             private ProgressBar progressbar;
             private RelativeLayout relativeLayout;
+            private CircleImageView imageView_profile;
 
             private groupViewHolder(@NonNull View view) {
                 super(view);

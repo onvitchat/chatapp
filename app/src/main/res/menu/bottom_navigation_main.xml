@@ -3,26 +3,26 @@
     <item
         android:id="@+id/action_notice"
         android:enabled="true"
-        android:icon="@drawable/ic_announcement_black_24dp"
+        android:icon="@drawable/ic_notice_item"
         android:title="공지사항"/>
     <item
         android:id="@+id/action_people"
         android:enabled="true"
-        android:icon="@drawable/baseline_people_24"
+        android:icon="@drawable/ic_list_item"
         android:title="연락처"/>
     <item
         android:id="@+id/action_chat"
         android:enabled="true"
-        android:icon="@drawable/ic_chat_black_24dp"
+        android:icon="@drawable/ic_chat_item"
         android:title="채팅방"/>
     <item
         android:id="@+id/action_account"
         android:enabled="true"
-        android:icon="@drawable/ic_shopping_cart_black_24dp"
+        android:icon="@drawable/ic_cart_item"
         android:title="구매"/>
     <item
         android:id="@+id/action_setup"
         android:enabled="true"
-        android:icon="@drawable/settings_icon"
+        android:icon="@drawable/ic_set_item"
         android:title="설정"/>
 </menu>

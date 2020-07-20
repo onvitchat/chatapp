@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class NoticeFragment extends Fragment {
     private AppCompatActivity activity;
     private List<Notice> noticeLists = new ArrayList<>();
@@ -102,7 +104,7 @@ public class NoticeFragment extends Fragment {
         startTime = System.currentTimeMillis();
         firebaseDatabase.child("Notice").orderByChild("timestamp").addValueEventListener(valueEventListener);
 
-        FloatingActionButton make = view.findViewById(R.id.plus_notice);
+        CircleImageView make = view.findViewById(R.id.plus_notice);
         make.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -150,7 +152,6 @@ public class NoticeFragment extends Fragment {
             holder.time.setVisibility(View.VISIBLE);
             holder.newicon.setVisibility(View.VISIBLE);
             holder.name.setText(noticeList.get(position).getName());
-            holder.name.setTextColor(Color.GRAY);
             holder.title.setText(noticeList.get(position).getTitle());
             if (uid.equals(noticeList.get(position).getUid())) {
                 holder.name.setTextColor(Color.BLUE);
@@ -253,11 +254,8 @@ public class NoticeFragment extends Fragment {
 
 
         private class NoticeViewHolder extends RecyclerView.ViewHolder {
-            TextView title;
-            TextView name;
-            TextView time;
+            TextView title,name,time,notice, lineText;
             ImageView newicon;
-            ImageView notice;
             LinearLayout layout;
 
             private NoticeViewHolder(View itemView) {
@@ -268,6 +266,7 @@ public class NoticeFragment extends Fragment {
                 newicon = itemView.findViewById(R.id.new_icon);
                 notice = itemView.findViewById(R.id.notice);
                 layout = itemView.findViewById(R.id.layout_title);
+                lineText = itemView.findViewById(R.id.line_text2);
             }
         }
     }

@@ -70,6 +70,8 @@ public class PeopleFragment extends Fragment {
             }
         };
         FirebaseDatabase.getInstance().getReference().child("Users").addValueEventListener(valueEventListener);
+
+
         return view;
     }
 
